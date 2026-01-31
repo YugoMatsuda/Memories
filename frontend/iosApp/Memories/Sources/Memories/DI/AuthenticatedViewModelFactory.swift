@@ -41,8 +41,8 @@ public final class AuthenticatedViewModelFactory {
         )
     }
 
-    public func makeAlbumFormViewModel(mode: AlbumFormMode, onDismiss: @escaping () -> Void) -> AlbumFormViewModel {
-        AlbumFormViewModel(mode: mode, onDismiss: onDismiss)
+    public func makeAlbumFormViewModel(mode: AlbumFormMode) -> AlbumFormViewModel {
+        AlbumFormViewModel(mode: mode, useCase: container.albumFormUseCase, router: container.router)
     }
 
     public func makeUserProfileViewModel(user: User) -> UserProfileViewModel {

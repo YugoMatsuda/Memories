@@ -50,4 +50,8 @@ public final class AuthenticatedContainer {
     public lazy var userProfileUseCase: UserProfileUseCase = {
         UserProfileUseCase(userGateway: userGateway, userRepository: userRepository)
     }()
+
+    public lazy var albumFormUseCase: AlbumFormUseCase = {
+        AlbumFormUseCase(albumGateway: albumGateway)
+    }()
 }

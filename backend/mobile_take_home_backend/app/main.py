@@ -166,6 +166,36 @@ def update_album(
     return album
 
 
+@app.post("/albums/{album_id}/cover", response_model=schemas.AlbumOut)
+def upload_album_cover(
+    album_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+):
+    album = (
+        db.query(models.Album)
+        .filter(
+            models.Album.id == album_id,
+            models.Album.owner_id == current_user.id,
+        )
+        .first()
+    )
+    if album is None:
+        raise HTTPException(status_code=404, detail="Album not found")
+
+    filename = f"cover_{album_id}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{file.filename}"
+    destination = UPLOAD_DIR / filename
+    with destination.open("wb") as buffer:
+        buffer.write(file.file.read())
+
+    album.cover_image_url = f"/uploads/{filename}"
+    db.add(album)
+    db.commit()
+    db.refresh(album)
+    return album
+
+
 @app.get("/albums/{album_id}/memories", response_model=schemas.PaginatedMemories)
 def list_memories(
     album_id: int,

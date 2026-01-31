@@ -98,9 +98,7 @@ public final class AuthenticatedCoordinator: ObservableObject {
     }
 
     public func makeAlbumFormView(mode: AlbumFormMode) -> AlbumFormView {
-        let viewModel = factory.makeAlbumFormViewModel(mode: mode, onDismiss: { [weak self] in
-            self?.factory.container.router.dismissSheet()
-        })
+        let viewModel = factory.makeAlbumFormViewModel(mode: mode)
         return AlbumFormView(viewModel: viewModel)
     }
 
