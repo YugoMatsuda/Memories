@@ -81,6 +81,24 @@ def update_me(
     return current_user
 
 
+@app.post("/me/avatar", response_model=schemas.UserOut)
+def upload_avatar(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+):
+    filename = f"avatar_{current_user.id}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{file.filename}"
+    destination = UPLOAD_DIR / filename
+    with destination.open("wb") as buffer:
+        buffer.write(file.file.read())
+
+    current_user.avatar_url = f"/uploads/{filename}"
+    db.add(current_user)
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+
 @app.get("/albums", response_model=schemas.PaginatedAlbums)
 def list_albums(
     page: int = 1,
