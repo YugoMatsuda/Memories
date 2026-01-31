@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl:*)",
+      "Bash(jq:*)",
+      "Bash(swift package init:*)",
+      "Bash(swift build:*)",
+      "Bash(head:*)",
+      "Bash(xcodebuild:*)",
+      "Bash(git rm:*)"
+    ]
+  }
+}
