@@ -50,6 +50,6 @@ public final class AuthenticatedViewModelFactory {
     }
 
     public func makeAlbumDetailViewModel(album: Album) -> AlbumDetailViewModel {
-        AlbumDetailViewModel(album: album)
+        AlbumDetailViewModel(album: album, router: container.router)
     }
 }

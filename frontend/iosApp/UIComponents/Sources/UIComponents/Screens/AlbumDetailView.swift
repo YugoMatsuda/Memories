@@ -11,5 +11,14 @@ public struct AlbumDetailView: View {
     public var body: some View {
         Text(viewModel.album.title)
             .navigationTitle(viewModel.album.title)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        viewModel.showEditAlbumForm()
+                    } label: {
+                        Image(systemName: "pencil")
+                    }
+                }
+            }
     }
 }
