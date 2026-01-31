@@ -30,6 +30,7 @@ public struct MemoryUploadRequest: APIRequestProtocol {
     public var method: HTTPMethod { .post }
     public var headerType: HeaderType { .multipartFormData }
     public var queryItems: [URLQueryItem]? { nil }
+    public var contentTypeOverride: String? { "multipart/form-data; boundary=\(boundary)" }
 
     public var httpBody: Data? {
         var body = Data()

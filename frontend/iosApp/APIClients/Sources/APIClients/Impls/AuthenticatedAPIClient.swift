@@ -66,7 +66,7 @@ private extension AuthenticatedAPIClient {
             "accept": "application/json",
             "Authorization": "Bearer \(apiToken)"
         ]
-        if let contentType = apiRequest.headerType.contentType {
+        if let contentType = apiRequest.contentTypeOverride ?? apiRequest.headerType.contentType {
             headers["Content-Type"] = contentType
         }
 

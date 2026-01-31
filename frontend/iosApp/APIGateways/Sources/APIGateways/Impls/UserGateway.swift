@@ -19,4 +19,10 @@ public struct UserGateway: UserGatewayProtocol {
         let data = try await apiClient.send(request)
         return try JSONDecoder().decode(UserResponse.self, from: data)
     }
+
+    public func uploadAvatar(fileData: Data, fileName: String, mimeType: String) async throws -> UserResponse {
+        let request = AvatarUploadRequest(fileData: fileData, fileName: fileName, mimeType: mimeType)
+        let data = try await apiClient.send(request)
+        return try JSONDecoder().decode(UserResponse.self, from: data)
+    }
 }

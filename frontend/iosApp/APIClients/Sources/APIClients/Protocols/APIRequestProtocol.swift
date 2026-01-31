@@ -32,4 +32,9 @@ public protocol APIRequestProtocol: Sendable {
     var headerType: HeaderType { get }
     var httpBody: Data? { get }
     var queryItems: [URLQueryItem]? { get }
+    var contentTypeOverride: String? { get }
+}
+
+public extension APIRequestProtocol {
+    var contentTypeOverride: String? { nil }
 }
