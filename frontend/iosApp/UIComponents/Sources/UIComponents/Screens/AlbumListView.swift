@@ -11,9 +11,7 @@ public struct AlbumListView: View {
 
     public var body: some View {
         ZStack {
-            VStack {
-                Text("Albums")
-            }
+            contentView
 
             VStack {
                 Spacer()
@@ -46,6 +44,92 @@ public struct AlbumListView: View {
                 }
             }
         }
+        .onAppear {
+            viewModel.onAppear()
+        }
+    }
+
+    @ViewBuilder
+    private var contentView: some View {
+        switch viewModel.displayResult {
+        case .loading:
+            ProgressView()
+        case .success(let listData):
+            albumListView(listData: listData)
+        case .failure(let error):
+            errorView(error: error)
+        }
+    }
+
+    private func albumListView(listData: AlbumListViewModel.ListData) -> some View {
+        ScrollView {
+            LazyVStack(spacing: 0) {
+                ForEach(listData.items) { item in
+                    albumRow(item: item)
+                        .onAppear {
+                            if item.id == listData.items.last?.id {
+                                viewModel.onLoadMore()
+                            }
+                        }
+                    Divider()
+                }
+
+                if listData.hasMore {
+                    ProgressView()
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                }
+            }
+        }
+    }
+
+    private func albumRow(item: AlbumListViewModel.AlbumItemUIModel) -> some View {
+        Button {
+            item.didTap()
+        } label: {
+            HStack(spacing: 12) {
+                if let url = item.coverImageUrl {
+                    WebImage(url: url)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 50, height: 50)
+                        .clipped()
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                } else {
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(Color.secondary.opacity(0.2))
+                        .frame(width: 50, height: 50)
+                        .overlay {
+                            Image(systemName: "photo")
+                                .foregroundStyle(.secondary)
+                        }
+                }
+
+                Text(item.title)
+                    .font(.body)
+                    .foregroundStyle(.primary)
+
+                Spacer()
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 12)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func errorView(error: AlbumListViewModel.ErrorUIModel) -> some View {
+        VStack(spacing: 16) {
+            Text(error.message)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+
+            Button("Retry") {
+                error.retryAction()
+            }
+            .buttonStyle(.bordered)
+        }
+        .padding()
     }
 
     private var fabButton: some View {

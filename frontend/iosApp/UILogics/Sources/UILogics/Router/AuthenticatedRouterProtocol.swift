@@ -3,6 +3,7 @@ import Domains
 
 public enum AuthenticatedRoute: Hashable {
     case userProfile(User)
+    case albumDetail(Album)
 }
 
 public enum AlbumFormMode: Equatable {

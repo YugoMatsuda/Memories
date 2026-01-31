@@ -48,4 +48,8 @@ public final class AuthenticatedViewModelFactory {
     public func makeUserProfileViewModel(user: User) -> UserProfileViewModel {
         UserProfileViewModel(user: user, useCase: container.userProfileUseCase)
     }
+
+    public func makeAlbumDetailViewModel(album: Album) -> AlbumDetailViewModel {
+        AlbumDetailViewModel(album: album)
+    }
 }

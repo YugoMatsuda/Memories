@@ -97,6 +97,11 @@ public final class AuthenticatedCoordinator: ObservableObject {
         return UserProfileView(viewModel: viewModel)
     }
 
+    public func makeAlbumDetailView(album: Album) -> AlbumDetailView {
+        let viewModel = factory.makeAlbumDetailViewModel(album: album)
+        return AlbumDetailView(viewModel: viewModel)
+    }
+
     public func makeAlbumFormView(mode: AlbumFormMode) -> AlbumFormView {
         let viewModel = factory.makeAlbumFormViewModel(mode: mode)
         return AlbumFormView(viewModel: viewModel)
@@ -107,6 +112,8 @@ public final class AuthenticatedCoordinator: ObservableObject {
         switch route {
         case .userProfile(let user):
             makeUserProfileView(user: user)
+        case .albumDetail(let album):
+            makeAlbumDetailView(album: album)
         }
     }
 
