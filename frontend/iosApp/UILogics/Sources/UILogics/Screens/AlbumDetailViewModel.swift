@@ -14,4 +14,8 @@ public final class AlbumDetailViewModel: ObservableObject {
     public func showEditAlbumForm() {
         router.showSheet(.albumForm(.edit(album)))
     }
+
+    public func showCreateMemoryForm() {
+        router.showSheet(.memoryForm(albumId: album.id))
+    }
 }

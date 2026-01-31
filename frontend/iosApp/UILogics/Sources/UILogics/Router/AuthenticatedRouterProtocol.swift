@@ -13,6 +13,7 @@ public enum AlbumFormMode: Equatable {
 
 public enum AuthenticatedSheet: Identifiable, Equatable {
     case albumForm(AlbumFormMode)
+    case memoryForm(albumId: Int)
 
     public var id: String {
         switch self {
@@ -23,6 +24,8 @@ public enum AuthenticatedSheet: Identifiable, Equatable {
             case .edit(let album):
                 return "albumForm_edit_\(album.id)"
             }
+        case .memoryForm(let albumId):
+            return "memoryForm_\(albumId)"
         }
     }
 }

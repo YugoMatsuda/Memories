@@ -52,4 +52,8 @@ public final class AuthenticatedViewModelFactory {
     public func makeAlbumDetailViewModel(album: Album) -> AlbumDetailViewModel {
         AlbumDetailViewModel(album: album, router: container.router)
     }
+
+    public func makeMemoryFormViewModel(albumId: Int) -> MemoryFormViewModel {
+        MemoryFormViewModel(albumId: albumId, useCase: container.memoryFormUseCase, router: container.router)
+    }
 }

@@ -107,6 +107,11 @@ public final class AuthenticatedCoordinator: ObservableObject {
         return AlbumFormView(viewModel: viewModel)
     }
 
+    public func makeMemoryFormView(albumId: Int) -> MemoryFormView {
+        let viewModel = factory.makeMemoryFormViewModel(albumId: albumId)
+        return MemoryFormView(viewModel: viewModel)
+    }
+
     @ViewBuilder
     public func destination(for route: AuthenticatedRoute) -> some View {
         switch route {
@@ -122,6 +127,8 @@ public final class AuthenticatedCoordinator: ObservableObject {
         switch sheet {
         case .albumForm(let mode):
             makeAlbumFormView(mode: mode)
+        case .memoryForm(let albumId):
+            makeMemoryFormView(albumId: albumId)
         }
     }
 }
