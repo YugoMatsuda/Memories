@@ -25,13 +25,10 @@ public struct UserProfileView: View {
                         .foregroundStyle(.secondary)
                 }
 
-                DatePicker(
+                OptionalDatePicker(
                     "Birthday",
-                    selection: Binding(
-                        get: { viewModel.birthday ?? Date() },
-                        set: { viewModel.birthday = $0 }
-                    ),
-                    displayedComponents: .date
+                    prompt: "Not set",
+                    selection: $viewModel.birthday
                 )
             }
         }
@@ -41,6 +38,7 @@ public struct UserProfileView: View {
                 Button("Save") {
                     viewModel.save()
                 }
+                .disabled(viewModel.name.trimmingCharacters(in: .whitespaces).isEmpty)
             }
         }
         .sheet(isPresented: $viewModel.isShowingImagePicker) {
