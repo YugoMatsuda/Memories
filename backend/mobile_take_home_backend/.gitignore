@@ -4,3 +4,7 @@ __pycache__/
 *.db
 .env
 .venv/
+
+# Uploads (keep folder structure, ignore actual files)
+uploads/*
+!uploads/[keep]

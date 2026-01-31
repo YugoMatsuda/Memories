@@ -30,7 +30,7 @@ public final class AuthenticatedCoordinator: ObservableObject {
     public enum State: Equatable {
         case splash
         case continueAs(User)
-        case main(User)
+        case main
     }
 
     @Published public var state: State = .splash
@@ -50,7 +50,7 @@ public final class AuthenticatedCoordinator: ObservableObject {
                 if self.hasPreviousSession {
                     self.state = .continueAs(user)
                 } else {
-                    self.state = .main(user)
+                    self.state = .main
                 }
             },
             onSessionExpired: {
@@ -65,7 +65,7 @@ public final class AuthenticatedCoordinator: ObservableObject {
             userName: user.name,
             avatarUrl: user.avatarUrl,
             onTap: { [weak self] in
-                self?.state = .main(user)
+                self?.state = .main
             }
         )
         let viewModel = factory.makeLoginViewModel(
@@ -78,8 +78,8 @@ public final class AuthenticatedCoordinator: ObservableObject {
         return LoginView(viewModel: viewModel)
     }
 
-    public func makeAlbumListView(user: User) -> AlbumListView {
-        let viewModel = factory.makeAlbumListViewModel(user: user)
+    public func makeAlbumListView() -> AlbumListView {
+        let viewModel = factory.makeAlbumListViewModel()
         return AlbumListView(viewModel: viewModel)
     }
 

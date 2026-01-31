@@ -1,19 +1,18 @@
 import Foundation
 import Combine
 import Domains
+import Repositories
 
 public final class AlbumListUseCase: AlbumListUseCaseProtocol, @unchecked Sendable {
-    private let userSubject: CurrentValueSubject<User, Never>
+    private let userRepository: UserRepositoryProtocol
 
     public var observeUser: AnyPublisher<User, Never> {
-        userSubject.eraseToAnyPublisher()
+        userRepository.userPublisher
+            .compactMap { $0 }
+            .eraseToAnyPublisher()
     }
 
-    public init(user: User) {
-        self.userSubject = CurrentValueSubject(user)
-    }
-
-    public func updateUser(_ user: User) {
-        userSubject.send(user)
+    public init(userRepository: UserRepositoryProtocol) {
+        self.userRepository = userRepository
     }
 }

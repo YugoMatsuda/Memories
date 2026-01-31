@@ -72,9 +72,9 @@ struct AuthenticatedRootView: View {
             case .continueAs(let user):
                 coordinator.makeLoginView(user: user)
 
-            case .main(let user):
+            case .main:
                 NavigationStack(path: $router.path) {
-                    coordinator.makeAlbumListView(user: user)
+                    coordinator.makeAlbumListView()
                         .navigationDestination(for: AuthenticatedRoute.self) { route in
                             coordinator.destination(for: route)
                         }

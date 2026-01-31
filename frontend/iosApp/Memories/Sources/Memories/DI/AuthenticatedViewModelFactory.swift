@@ -33,14 +33,14 @@ public final class AuthenticatedViewModelFactory {
         )
     }
 
-    public func makeAlbumListViewModel(user: User) -> AlbumListViewModel {
+    public func makeAlbumListViewModel() -> AlbumListViewModel {
         AlbumListViewModel(
-            albumListUseCase: container.makeAlbumListUseCase(user: user),
+            albumListUseCase: container.albumListUseCase,
             router: container.router
         )
     }
 
     public func makeUserProfileViewModel(user: User) -> UserProfileViewModel {
-        UserProfileViewModel(user: user)
+        UserProfileViewModel(user: user, useCase: container.userProfileUseCase)
     }
 }

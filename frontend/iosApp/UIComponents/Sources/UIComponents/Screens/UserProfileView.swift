@@ -16,34 +16,39 @@ public struct UserProfileView: View {
             }
 
             Section {
-                TextField("Name", text: $viewModel.name)
+                TextField("Name", text: $viewModel.uiModel.name)
 
                 HStack {
                     Text("Username")
                     Spacer()
-                    Text(viewModel.username)
+                    Text(viewModel.uiModel.username)
                         .foregroundStyle(.secondary)
                 }
 
                 OptionalDatePicker(
                     "Birthday",
                     prompt: "Not set",
-                    selection: $viewModel.birthday
+                    selection: $viewModel.uiModel.birthday
                 )
             }
         }
         .navigationTitle("Profile")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button("Save") {
-                    viewModel.save()
+                if viewModel.isSaving {
+                    ProgressView()
+                } else {
+                    Button("Save") {
+                        viewModel.save()
+                    }
+                    .disabled(viewModel.uiModel.name.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
-                .disabled(viewModel.name.trimmingCharacters(in: .whitespaces).isEmpty)
             }
         }
         .sheet(isPresented: $viewModel.isShowingImagePicker) {
             CropableImagePicker(image: $viewModel.selectedImage)
         }
+        .showAlert(item: $viewModel.alertItem)
     }
 
     @ViewBuilder
@@ -53,30 +58,41 @@ public struct UserProfileView: View {
             Button {
                 viewModel.selectAvatar()
             } label: {
-                if let selectedImage = viewModel.selectedImage {
-                    Image(uiImage: selectedImage)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 100, height: 100)
-                        .clipShape(Circle())
-                } else if let avatarUrl = viewModel.avatarUrl {
-                    WebImage(url: avatarUrl)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 100, height: 100)
-                        .clipShape(Circle())
-                } else {
-                    Circle()
-                        .fill(Color.gray.opacity(0.3))
-                        .frame(width: 100, height: 100)
-                        .overlay {
-                            Image(systemName: "person.fill")
-                                .font(.system(size: 40))
-                                .foregroundStyle(.gray)
-                        }
+                ZStack {
+                    avatarImage
+
+                    if viewModel.isUploadingAvatar {
+                        Circle()
+                            .fill(Color.black.opacity(0.4))
+                            .frame(width: 100, height: 100)
+                        ProgressView()
+                            .tint(.white)
+                    }
                 }
             }
+            .disabled(viewModel.isUploadingAvatar)
             Spacer()
+        }
+    }
+
+    @ViewBuilder
+    private var avatarImage: some View {
+        if let url = viewModel.uiModel.avatarUrl {
+            WebImage(url: url)
+                .resizable()
+                .scaledToFill()
+                .frame(width: 100, height: 100)
+                .clipped()
+                .clipShape(Circle())
+        } else {
+            Circle()
+                .fill(Color.gray.opacity(0.3))
+                .frame(width: 100, height: 100)
+                .overlay {
+                    Image(systemName: "person.fill")
+                        .font(.system(size: 40))
+                        .foregroundStyle(.gray)
+                }
         }
     }
 }

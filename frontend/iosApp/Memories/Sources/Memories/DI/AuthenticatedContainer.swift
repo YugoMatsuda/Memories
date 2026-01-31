@@ -43,7 +43,11 @@ public final class AuthenticatedContainer {
 
     public let router = AuthenticatedRouter()
 
-    public func makeAlbumListUseCase(user: User) -> AlbumListUseCase {
-        AlbumListUseCase(user: user)
-    }
+    public lazy var albumListUseCase: AlbumListUseCase = {
+        AlbumListUseCase(userRepository: userRepository)
+    }()
+
+    public lazy var userProfileUseCase: UserProfileUseCase = {
+        UserProfileUseCase(userGateway: userGateway, userRepository: userRepository)
+    }()
 }

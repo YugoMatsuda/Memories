@@ -1,16 +1,21 @@
 import Foundation
+import Combine
 import Domains
 
 public final class UserRepository: UserRepositoryProtocol, @unchecked Sendable {
-    private var user: User?
+    private let userSubject = CurrentValueSubject<User?, Never>(nil)
+
+    public var userPublisher: AnyPublisher<User?, Never> {
+        userSubject.eraseToAnyPublisher()
+    }
 
     public init() {}
 
     public func get() -> User? {
-        user
+        userSubject.value
     }
 
     public func set(_ user: User) {
-        self.user = user
+        userSubject.send(user)
     }
 }
