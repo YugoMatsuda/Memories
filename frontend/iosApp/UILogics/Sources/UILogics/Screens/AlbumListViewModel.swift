@@ -30,6 +30,14 @@ public final class AlbumListViewModel: ObservableObject {
             }
             .store(in: &cancellables)
     }
+
+    public func showCreateAlbumForm() {
+        router.showSheet(.albumForm(.create))
+    }
+
+    public func showEditAlbumForm(album: Album) {
+        router.showSheet(.albumForm(.edit(album)))
+    }
 }
 
 extension AlbumListViewModel {

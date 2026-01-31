@@ -10,8 +10,19 @@ public struct AlbumListView: View {
     }
 
     public var body: some View {
-        VStack {
-            Text("Albums")
+        ZStack {
+            VStack {
+                Text("Albums")
+            }
+
+            VStack {
+                Spacer()
+                HStack {
+                    Spacer()
+                    fabButton
+                }
+            }
+            .padding()
         }
         .navigationTitle("Memories")
         .toolbar {
@@ -25,6 +36,7 @@ public struct AlbumListView: View {
                                 .resizable()
                                 .scaledToFill()
                                 .frame(width: 32, height: 32)
+                                .clipped()
                                 .clipShape(Circle())
                         } else {
                             Image(systemName: "person.circle.fill")
@@ -33,6 +45,21 @@ public struct AlbumListView: View {
                     }
                 }
             }
+        }
+    }
+
+    private var fabButton: some View {
+        Button {
+            viewModel.showCreateAlbumForm()
+        } label: {
+            Image(systemName: "plus")
+                .font(.title2)
+                .fontWeight(.semibold)
+                .foregroundStyle(.white)
+                .frame(width: 56, height: 56)
+                .background(Color.accentColor)
+                .clipShape(Circle())
+                .shadow(radius: 4, y: 2)
         }
     }
 }

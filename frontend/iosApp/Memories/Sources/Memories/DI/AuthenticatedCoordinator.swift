@@ -7,6 +7,7 @@ import UIComponents
 @MainActor
 public final class AuthenticatedRouter: AuthenticatedRouterProtocol, ObservableObject {
     @Published public var path = NavigationPath()
+    @Published public var sheetItem: AuthenticatedSheet?
 
     public init() {}
 
@@ -22,6 +23,14 @@ public final class AuthenticatedRouter: AuthenticatedRouterProtocol, ObservableO
 
     public func popToRoot() {
         path = NavigationPath()
+    }
+
+    public func showSheet(_ sheet: AuthenticatedSheet) {
+        sheetItem = sheet
+    }
+
+    public func dismissSheet() {
+        sheetItem = nil
     }
 }
 
@@ -88,6 +97,13 @@ public final class AuthenticatedCoordinator: ObservableObject {
         return UserProfileView(viewModel: viewModel)
     }
 
+    public func makeAlbumFormView(mode: AlbumFormMode) -> AlbumFormView {
+        let viewModel = factory.makeAlbumFormViewModel(mode: mode, onDismiss: { [weak self] in
+            self?.factory.container.router.dismissSheet()
+        })
+        return AlbumFormView(viewModel: viewModel)
+    }
+
     @ViewBuilder
     public func destination(for route: AuthenticatedRoute) -> some View {
         switch route {
@@ -96,4 +112,11 @@ public final class AuthenticatedCoordinator: ObservableObject {
         }
     }
 
+    @ViewBuilder
+    public func sheetDestination(for sheet: AuthenticatedSheet) -> some View {
+        switch sheet {
+        case .albumForm(let mode):
+            makeAlbumFormView(mode: mode)
+        }
+    }
 }

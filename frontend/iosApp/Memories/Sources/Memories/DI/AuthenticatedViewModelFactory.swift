@@ -1,11 +1,12 @@
 import Foundation
 import Domains
 import UILogics
+import UIComponents
 import UseCases
 
 @MainActor
 public final class AuthenticatedViewModelFactory {
-    private let container: AuthenticatedContainer
+    let container: AuthenticatedContainer
 
     public init(container: AuthenticatedContainer) {
         self.container = container
@@ -38,6 +39,10 @@ public final class AuthenticatedViewModelFactory {
             albumListUseCase: container.albumListUseCase,
             router: container.router
         )
+    }
+
+    public func makeAlbumFormViewModel(mode: AlbumFormMode, onDismiss: @escaping () -> Void) -> AlbumFormViewModel {
+        AlbumFormViewModel(mode: mode, onDismiss: onDismiss)
     }
 
     public func makeUserProfileViewModel(user: User) -> UserProfileViewModel {

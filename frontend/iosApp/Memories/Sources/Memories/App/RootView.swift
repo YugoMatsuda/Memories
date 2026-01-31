@@ -79,6 +79,9 @@ struct AuthenticatedRootView: View {
                             coordinator.destination(for: route)
                         }
                 }
+                .sheet(item: $router.sheetItem) { sheet in
+                    coordinator.sheetDestination(for: sheet)
+                }
             }
         }
         .animation(.default, value: coordinator.state)
