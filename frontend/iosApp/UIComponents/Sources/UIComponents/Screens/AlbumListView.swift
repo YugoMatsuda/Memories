@@ -61,23 +61,32 @@ public struct AlbumListView: View {
         }
     }
 
+    @ViewBuilder
     private func albumListView(listData: AlbumListViewModel.ListData) -> some View {
-        ScrollView {
-            LazyVStack(spacing: 0) {
-                ForEach(listData.items) { item in
-                    albumRow(item: item)
-                        .onAppear {
-                            if item.id == listData.items.last?.id {
-                                viewModel.onLoadMore()
+        if listData.items.isEmpty {
+            EmptyStateView(
+                icon: "photo.on.rectangle.angled",
+                title: "No albums yet",
+                message: "Tap + to create your first album"
+            )
+        } else {
+            ScrollView {
+                LazyVStack(spacing: 0) {
+                    ForEach(listData.items) { item in
+                        albumRow(item: item)
+                            .onAppear {
+                                if item.id == listData.items.last?.id {
+                                    viewModel.onLoadMore()
+                                }
                             }
-                        }
-                    Divider()
-                }
+                        Divider()
+                    }
 
-                if listData.hasMore {
-                    ProgressView()
-                        .frame(maxWidth: .infinity)
-                        .padding()
+                    if listData.hasMore {
+                        ProgressView()
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                    }
                 }
             }
         }

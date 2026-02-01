@@ -54,24 +54,33 @@ public struct AlbumDetailView: View {
         }
     }
 
+    @ViewBuilder
     private func memoryGridView(listData: AlbumDetailViewModel.ListData) -> some View {
-        ScrollView {
-            LazyVGrid(columns: columns, spacing: 16) {
-                ForEach(listData.items) { item in
-                    memoryCell(item: item)
-                        .onAppear {
-                            if item.id == listData.items.last?.id {
-                                viewModel.onLoadMore()
+        if listData.items.isEmpty {
+            EmptyStateView(
+                icon: "photo.stack",
+                title: "No memories yet",
+                message: "Tap + to add your first memory"
+            )
+        } else {
+            ScrollView {
+                LazyVGrid(columns: columns, spacing: 16) {
+                    ForEach(listData.items) { item in
+                        memoryCell(item: item)
+                            .onAppear {
+                                if item.id == listData.items.last?.id {
+                                    viewModel.onLoadMore()
+                                }
                             }
-                        }
+                    }
                 }
-            }
-            .padding(.horizontal)
+                .padding(.horizontal)
 
-            if listData.hasMore {
-                ProgressView()
-                    .frame(maxWidth: .infinity)
-                    .padding()
+                if listData.hasMore {
+                    ProgressView()
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                }
             }
         }
     }
