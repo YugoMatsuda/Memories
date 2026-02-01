@@ -58,4 +58,8 @@ public final class AuthenticatedContainer {
     public lazy var memoryFormUseCase: MemoryFormUseCase = {
         MemoryFormUseCase(memoryGateway: memoryGateway)
     }()
+
+    public lazy var albumDetailUseCase: AlbumDetailUseCase = {
+        AlbumDetailUseCase(memoryGateway: memoryGateway)
+    }()
 }

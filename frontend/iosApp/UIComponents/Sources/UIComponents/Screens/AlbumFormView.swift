@@ -45,7 +45,7 @@ public struct AlbumFormView: View {
             }
             .showAlert(item: $viewModel.alertItem)
             .sheet(isPresented: $viewModel.isShowingImagePicker) {
-                CropableImagePicker(image: $viewModel.selectedImage)
+                ImagePicker(image: $viewModel.selectedImage, allowsEditing: true)
             }
         }
     }

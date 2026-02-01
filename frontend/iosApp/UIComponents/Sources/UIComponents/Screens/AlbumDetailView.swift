@@ -1,8 +1,14 @@
 import SwiftUI
 import UILogics
+import SDWebImageSwiftUI
 
 public struct AlbumDetailView: View {
     @StateObject private var viewModel: AlbumDetailViewModel
+
+    private let columns = [
+        GridItem(.flexible(), spacing: 12),
+        GridItem(.flexible(), spacing: 12)
+    ]
 
     public init(viewModel: AlbumDetailViewModel) {
         self._viewModel = StateObject(wrappedValue: viewModel)
@@ -10,7 +16,7 @@ public struct AlbumDetailView: View {
 
     public var body: some View {
         ZStack {
-            Text(viewModel.album.title)
+            contentView
 
             VStack {
                 Spacer()
@@ -31,6 +37,69 @@ public struct AlbumDetailView: View {
                 }
             }
         }
+        .onAppear {
+            viewModel.onAppear()
+        }
+    }
+
+    @ViewBuilder
+    private var contentView: some View {
+        switch viewModel.displayResult {
+        case .loading:
+            ProgressView()
+        case .success(let listData):
+            memoryGridView(listData: listData)
+        case .failure(let error):
+            errorView(error: error)
+        }
+    }
+
+    private func memoryGridView(listData: AlbumDetailViewModel.ListData) -> some View {
+        ScrollView {
+            LazyVGrid(columns: columns, spacing: 16) {
+                ForEach(listData.items) { item in
+                    memoryCell(item: item)
+                        .onAppear {
+                            if item.id == listData.items.last?.id {
+                                viewModel.onLoadMore()
+                            }
+                        }
+                }
+            }
+            .padding(.horizontal)
+
+            if listData.hasMore {
+                ProgressView()
+                    .frame(maxWidth: .infinity)
+                    .padding()
+            }
+        }
+    }
+
+    private func memoryCell(item: AlbumDetailViewModel.MemoryItemUIModel) -> some View {
+        Button {
+            item.didTap()
+        } label: {
+            WebImage(url: item.imageUrl)
+                .resizable()
+                .scaledToFit()
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func errorView(error: AlbumDetailViewModel.ErrorUIModel) -> some View {
+        VStack(spacing: 16) {
+            Text(error.message)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+
+            Button("Retry") {
+                error.retryAction()
+            }
+            .buttonStyle(.bordered)
+        }
+        .padding()
     }
 
     private var fabButton: some View {

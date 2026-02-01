@@ -1,8 +1,9 @@
 import SwiftUI
 import UIKit
 
-struct CropableImagePicker: UIViewControllerRepresentable {
+struct ImagePicker: UIViewControllerRepresentable {
     @Binding var image: UIImage?
+    var allowsEditing: Bool = false
     @Environment(\.dismiss) private var dismiss
 
     func makeCoordinator() -> Coordinator {
@@ -13,16 +14,16 @@ struct CropableImagePicker: UIViewControllerRepresentable {
         let picker = UIImagePickerController()
         picker.delegate = context.coordinator
         picker.sourceType = .photoLibrary
-        picker.allowsEditing = true
+        picker.allowsEditing = allowsEditing
         return picker
     }
 
     func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
 
     class Coordinator: NSObject, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
-        let parent: CropableImagePicker
+        let parent: ImagePicker
 
-        init(_ parent: CropableImagePicker) {
+        init(_ parent: ImagePicker) {
             self.parent = parent
         }
 
@@ -30,7 +31,7 @@ struct CropableImagePicker: UIViewControllerRepresentable {
             _ picker: UIImagePickerController,
             didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]
         ) {
-            if let image = info[.editedImage] as? UIImage {
+            if parent.allowsEditing, let image = info[.editedImage] as? UIImage {
                 parent.image = image
             } else if let image = info[.originalImage] as? UIImage {
                 parent.image = image

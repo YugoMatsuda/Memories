@@ -46,7 +46,7 @@ public struct UserProfileView: View {
             }
         }
         .sheet(isPresented: $viewModel.isShowingImagePicker) {
-            CropableImagePicker(image: $viewModel.selectedImage)
+            ImagePicker(image: $viewModel.selectedImage, allowsEditing: true)
         }
         .showAlert(item: $viewModel.alertItem)
     }
