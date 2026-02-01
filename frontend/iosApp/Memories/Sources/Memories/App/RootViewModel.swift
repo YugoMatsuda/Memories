@@ -1,7 +1,6 @@
 import Foundation
 import SwiftUI
 import Combine
-import Domains
 import UseCases
 
 public enum RootViewState: Equatable {
@@ -39,7 +38,6 @@ public final class RootViewModel: ObservableObject {
     }
 
     public func didLogin(token: String) {
-        AppConfig.authSessionRepository.save(session: AuthSession(token: token))
         state = .authenticated(token: token, hasPreviousSession: false)
     }
 

@@ -8,16 +8,13 @@ public final class SplashViewModel: ObservableObject {
 
     private let splashUseCase: SplashUseCaseProtocol
     private let onSuccess: (User) -> Void
-    private let onSessionExpired: () -> Void
 
     public init(
         splashUseCase: SplashUseCaseProtocol,
-        onSuccess: @escaping (User) -> Void,
-        onSessionExpired: @escaping () -> Void
+        onSuccess: @escaping (User) -> Void
     ) {
         self.splashUseCase = splashUseCase
         self.onSuccess = onSuccess
-        self.onSessionExpired = onSessionExpired
     }
 
     public func launchApp() async {
@@ -43,7 +40,6 @@ public final class SplashViewModel: ObservableObject {
                 buttonTitle: "Go to Login",
                 action: { [weak self] in
                     self?.splashUseCase.clearSession()
-                    self?.onSessionExpired()
                 }
             ))
         case .networkError:

@@ -61,9 +61,6 @@ public final class AuthenticatedCoordinator: ObservableObject {
                 } else {
                     self.state = .main
                 }
-            },
-            onSessionExpired: {
-                AppConfig.authSessionRepository.clearSession()
             }
         )
         return SplashView(viewModel: viewModel)

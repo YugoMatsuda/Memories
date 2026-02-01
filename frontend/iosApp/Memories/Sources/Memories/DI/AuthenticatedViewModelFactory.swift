@@ -13,13 +13,11 @@ public final class AuthenticatedViewModelFactory {
     }
 
     public func makeSplashViewModel(
-        onSuccess: @escaping (User) -> Void,
-        onSessionExpired: @escaping () -> Void
+        onSuccess: @escaping (User) -> Void
     ) -> SplashViewModel {
         SplashViewModel(
             splashUseCase: container.splashUseCase,
-            onSuccess: onSuccess,
-            onSessionExpired: onSessionExpired
+            onSuccess: onSuccess
         )
     }
 
