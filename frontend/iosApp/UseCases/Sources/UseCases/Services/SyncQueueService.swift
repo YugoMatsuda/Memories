@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 import Domains
 import Repositories
 import APIGateways
@@ -63,9 +64,16 @@ public final class SyncQueueService: SyncQueueServiceProtocol, @unchecked Sendab
     }
 
     public func processQueue() async {
+        print("[SyncQueueService] processQueue")
         guard reachabilityRepository.isConnected else { return }
 
         let operations = await syncQueueRepository.peek()
+        guard !operations.isEmpty else {
+            print("[SyncQueueService] there are no pending task")
+            return
+        }
+
+        syncQueueRepository.setSyncing(true)
 
         for operation in operations {
             do {
@@ -89,6 +97,8 @@ public final class SyncQueueService: SyncQueueServiceProtocol, @unchecked Sendab
                 }
             }
         }
+
+        syncQueueRepository.setSyncing(false)
     }
 
     // MARK: - Private

@@ -111,6 +111,11 @@ public final class AuthenticatedCoordinator: ObservableObject {
         return MemoryFormView(viewModel: viewModel)
     }
 
+    public func makeSyncQueuesView() -> SyncQueuesView {
+        let viewModel = factory.makeSyncQueuesViewModel()
+        return SyncQueuesView(viewModel: viewModel)
+    }
+
     @ViewBuilder
     public func destination(for route: AuthenticatedRoute) -> some View {
         switch route {
@@ -118,6 +123,8 @@ public final class AuthenticatedCoordinator: ObservableObject {
             makeUserProfileView(user: user)
         case .albumDetail(let album):
             makeAlbumDetailView(album: album)
+        case .syncQueues:
+            makeSyncQueuesView()
         }
     }
 

@@ -9,6 +9,7 @@ import Utilities
 public final class AlbumListViewModel: ObservableObject {
     @Published public private(set) var userIcon: UserIconUIModel?
     @Published public private(set) var displayResult: DisplayResult = .loading
+    @Published public private(set) var syncState: SyncQueueState = SyncQueueState(pendingCount: 0, isSyncing: false)
 
     private let albumListUseCase: AlbumListUseCaseProtocol
     private let router: AuthenticatedRouterProtocol
@@ -23,7 +24,7 @@ public final class AlbumListViewModel: ObservableObject {
         self.albumListUseCase = albumListUseCase
         self.router = router
 
-        albumListUseCase.observeUser
+        albumListUseCase.observeUser()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] user in
                 guard let self else { return }
@@ -36,10 +37,17 @@ public final class AlbumListViewModel: ObservableObject {
             }
             .store(in: &cancellables)
 
-        albumListUseCase.localChangePublisher
+        albumListUseCase.observeAlbumChange()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] event in
                 self?.handleLocalChange(event)
+            }
+            .store(in: &cancellables)
+
+        albumListUseCase.observeSync()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] state in
+                self?.syncState = state
             }
             .store(in: &cancellables)
     }
@@ -84,6 +92,10 @@ public final class AlbumListViewModel: ObservableObject {
 
     public func showEditAlbumForm(album: Album) {
         router.showSheet(.albumForm(.edit(album)))
+    }
+
+    public func showSyncQueues() {
+        router.push(.syncQueues)
     }
 
     private func display() async {

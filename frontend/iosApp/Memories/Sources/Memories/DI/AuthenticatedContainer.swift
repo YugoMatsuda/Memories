@@ -62,7 +62,7 @@ public final class AuthenticatedContainer {
         MemoryRepository(database: database)
     }()
 
-    private lazy var syncQueueRepository: SyncQueueRepository = {
+    public lazy var syncQueueRepository: SyncQueueRepository = {
         SyncQueueRepository(database: database)
     }()
 
@@ -70,9 +70,9 @@ public final class AuthenticatedContainer {
         ImageStorageRepository(userId: userId)
     }()
 
-    public lazy var reachabilityRepository: ReachabilityRepository = {
-        ReachabilityRepository()
-    }()
+    public var reachabilityRepository: ReachabilityRepositoryProtocol {
+        AppConfig.reachabilityRepository
+    }
 
     // MARK: - Services
 
@@ -97,7 +97,8 @@ public final class AuthenticatedContainer {
             userGateway: userGateway,
             userRepository: userRepository,
             authSessionRepository: AppConfig.authSessionRepository,
-            reachabilityRepository: reachabilityRepository
+            reachabilityRepository: reachabilityRepository,
+            syncQueueRepository: syncQueueRepository
         )
     }()
 
@@ -108,7 +109,9 @@ public final class AuthenticatedContainer {
             userRepository: userRepository,
             albumRepository: albumRepository,
             albumGateway: albumGateway,
-            reachabilityRepository: reachabilityRepository
+            reachabilityRepository: reachabilityRepository,
+            syncQueueService: syncQueueService,
+            syncQueueRepository: syncQueueRepository
         )
     }()
 

@@ -24,6 +24,9 @@ public struct AlbumListView: View {
         }
         .navigationTitle("Memories")
         .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                syncButton
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 if let userIcon = viewModel.userIcon {
                     Button {
@@ -153,6 +156,34 @@ public struct AlbumListView: View {
                 .background(Color.accentColor)
                 .clipShape(Circle())
                 .shadow(radius: 4, y: 2)
+        }
+    }
+
+    @ViewBuilder
+    private var syncButton: some View {
+        Button {
+            viewModel.showSyncQueues()
+        } label: {
+            HStack(spacing: 6) {
+                if viewModel.syncState.isSyncing {
+                    ProgressView()
+                        .scaleEffect(0.8)
+                    Text("Syncing")
+                        .font(.subheadline)
+                } else {
+                    Text("Sync Queues")
+                        .font(.subheadline)
+                    if viewModel.syncState.pendingCount > 0 {
+                        Text("\(viewModel.syncState.pendingCount)")
+                            .font(.caption)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.orange)
+                            .foregroundStyle(.white)
+                            .clipShape(Capsule())
+                    }
+                }
+            }
         }
     }
 }

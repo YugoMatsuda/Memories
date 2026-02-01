@@ -38,8 +38,9 @@ public enum AlbumListUseCaseModel {
 }
 
 public protocol AlbumListUseCaseProtocol: Sendable {
-    var observeUser: AnyPublisher<User, Never> { get }
-    var localChangePublisher: AnyPublisher<LocalAlbumChangeEvent, Never> { get }
+    func observeUser() -> AnyPublisher<User, Never>
+    func observeAlbumChange() -> AnyPublisher<LocalAlbumChangeEvent, Never>
+    func observeSync() -> AnyPublisher<SyncQueueState, Never>
     func display() async -> AlbumListUseCaseModel.DisplayResult
     func next(page: Int) async -> AlbumListUseCaseModel.NextResult
 }

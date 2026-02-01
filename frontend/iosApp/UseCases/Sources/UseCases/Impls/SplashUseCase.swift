@@ -9,20 +9,24 @@ public struct SplashUseCase: SplashUseCaseProtocol, Sendable {
     private let userRepository: any UserRepositoryProtocol
     private let authSessionRepository: any AuthSessionRepositoryProtocol
     private let reachabilityRepository: any ReachabilityRepositoryProtocol
+    private let syncQueueRepository: any SyncQueueRepositoryProtocol
 
     public init(
         userGateway: any UserGatewayProtocol,
         userRepository: any UserRepositoryProtocol,
         authSessionRepository: any AuthSessionRepositoryProtocol,
-        reachabilityRepository: any ReachabilityRepositoryProtocol
+        reachabilityRepository: any ReachabilityRepositoryProtocol,
+        syncQueueRepository: any SyncQueueRepositoryProtocol
     ) {
         self.userGateway = userGateway
         self.userRepository = userRepository
         self.authSessionRepository = authSessionRepository
         self.reachabilityRepository = reachabilityRepository
+        self.syncQueueRepository = syncQueueRepository
     }
 
     public func launchApp() async -> SplashUseCaseModel.LaunchAppResult {
+        await syncQueueRepository.refreshState()
         if reachabilityRepository.isConnected {
             do {
                 let response = try await userGateway.getUser()

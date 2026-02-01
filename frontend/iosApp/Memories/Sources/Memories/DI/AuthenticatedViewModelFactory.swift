@@ -54,4 +54,8 @@ public final class AuthenticatedViewModelFactory {
     public func makeMemoryFormViewModel(album: Album) -> MemoryFormViewModel {
         MemoryFormViewModel(album: album, useCase: container.memoryFormUseCase, router: container.router)
     }
+
+    public func makeSyncQueuesViewModel() -> SyncQueuesViewModel {
+        SyncQueuesViewModel(syncQueueRepository: container.syncQueueRepository)
+    }
 }

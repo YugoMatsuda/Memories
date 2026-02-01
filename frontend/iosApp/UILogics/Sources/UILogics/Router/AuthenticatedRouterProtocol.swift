@@ -4,6 +4,7 @@ import Domains
 public enum AuthenticatedRoute: Hashable {
     case userProfile(User)
     case albumDetail(Album)
+    case syncQueues
 }
 
 public enum AlbumFormMode: Equatable {

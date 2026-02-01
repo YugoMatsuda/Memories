@@ -9,25 +9,48 @@ public final class AlbumListUseCase: AlbumListUseCaseProtocol, @unchecked Sendab
     private let albumRepository: AlbumRepositoryProtocol
     private let albumGateway: AlbumGatewayProtocol
     private let reachabilityRepository: ReachabilityRepositoryProtocol
+    private let syncQueueService: SyncQueueServiceProtocol
+    private let syncQueueRepository: SyncQueueRepositoryProtocol
 
-    public var observeUser: AnyPublisher<User, Never> {
+    public func observeUser() -> AnyPublisher<User, Never> {
         userRepository.userPublisher
     }
 
-    public var localChangePublisher: AnyPublisher<LocalAlbumChangeEvent, Never> {
+    public func observeAlbumChange() -> AnyPublisher<LocalAlbumChangeEvent, Never> {
         albumRepository.localChangePublisher
+    }
+
+    public func observeSync() -> AnyPublisher<SyncQueueState, Never> {
+        Publishers.Merge(
+            // Always emit state
+            syncQueueRepository.statePublisher,
+            // Trigger sync when going online (emits nothing)
+            reachabilityRepository.isConnectedPublisher
+                .removeDuplicates()
+                .filter { $0 }
+                .flatMap { [weak self] _ -> AnyPublisher<SyncQueueState, Never> in
+                    guard let self else { return Empty().eraseToAnyPublisher() }
+                    Task { await self.syncQueueService.processQueue() }
+                    return Empty().eraseToAnyPublisher()
+                }
+        )
+        .eraseToAnyPublisher()
     }
 
     public init(
         userRepository: UserRepositoryProtocol,
         albumRepository: AlbumRepositoryProtocol,
         albumGateway: AlbumGatewayProtocol,
-        reachabilityRepository: ReachabilityRepositoryProtocol
+        reachabilityRepository: ReachabilityRepositoryProtocol,
+        syncQueueService: SyncQueueServiceProtocol,
+        syncQueueRepository: SyncQueueRepositoryProtocol
     ) {
         self.userRepository = userRepository
         self.albumRepository = albumRepository
         self.albumGateway = albumGateway
         self.reachabilityRepository = reachabilityRepository
+        self.syncQueueService = syncQueueService
+        self.syncQueueRepository = syncQueueRepository
     }
 
     public func display() async -> AlbumListUseCaseModel.DisplayResult {
