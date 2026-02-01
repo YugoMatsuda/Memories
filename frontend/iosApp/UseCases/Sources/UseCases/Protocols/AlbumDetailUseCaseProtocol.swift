@@ -1,5 +1,7 @@
 import Foundation
+import Combine
 import Domains
+import Repositories
 
 public enum AlbumDetailUseCaseModel {
     public struct PageInfo: Sendable {
@@ -17,6 +19,7 @@ public enum AlbumDetailUseCaseModel {
         case failure(Error)
 
         public enum Error: Sendable, Equatable {
+            case offline
             case networkError
             case unknown
         }
@@ -27,6 +30,7 @@ public enum AlbumDetailUseCaseModel {
         case failure(Error)
 
         public enum Error: Sendable, Equatable {
+            case offline
             case networkError
             case unknown
         }
@@ -34,6 +38,8 @@ public enum AlbumDetailUseCaseModel {
 }
 
 public protocol AlbumDetailUseCaseProtocol: Sendable {
-    func display(albumId: Int) async -> AlbumDetailUseCaseModel.DisplayResult
-    func next(albumId: Int, page: Int) async -> AlbumDetailUseCaseModel.NextResult
+    func display(album: Album) async -> AlbumDetailUseCaseModel.DisplayResult
+    func next(album: Album, page: Int) async -> AlbumDetailUseCaseModel.NextResult
+    var localChangePublisher: AnyPublisher<LocalMemoryChangeEvent, Never> { get }
+    var observeAlbumUpdate: AnyPublisher<LocalAlbumChangeEvent, Never> { get }
 }

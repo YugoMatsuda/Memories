@@ -15,6 +15,7 @@ public enum SplashUseCaseModel {
             case sessionExpired
             case networkError
             case serverError
+            case offlineNoCache
             case unknown
         }
     }

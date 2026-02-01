@@ -2,30 +2,21 @@ import Foundation
 import Domains
 
 public protocol UserProfileUseCaseProtocol: Sendable {
-    func uploadAvatar(imageData: Data) async -> UserProfileUseCaseModel.UploadAvatarResult
-    func updateProfile(name: String, birthday: Date?) async -> UserProfileUseCaseModel.UpdateProfileResult
+    func updateProfile(name: String, birthday: Date?, avatarData: Data?) async -> UserProfileUseCaseModel.UpdateProfileResult
     func logout()
 }
 
 public enum UserProfileUseCaseModel {
-    public enum UploadAvatarResult: Sendable {
-        case success(User)
-        case failure(Error)
-
-        public enum Error: Sendable {
-            case networkError
-            case serverError
-            case unknown
-        }
-    }
-
     public enum UpdateProfileResult: Sendable {
         case success(User)
+        case successPendingSync(User)
         case failure(Error)
 
         public enum Error: Sendable {
             case networkError
             case serverError
+            case imageStorageFailed
+            case databaseError
             case unknown
         }
     }

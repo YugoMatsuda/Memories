@@ -1,17 +1,21 @@
 import Foundation
+import Domains
 
 public enum MemoryFormUseCaseModel {
     public enum CreateResult: Sendable {
-        case success
+        case success(Memory)
+        case successPendingSync(Memory)
         case failure(Error)
 
         public enum Error: Sendable, Equatable {
             case networkError
+            case imageStorageFailed
+            case databaseError
             case unknown
         }
     }
 }
 
 public protocol MemoryFormUseCaseProtocol: Sendable {
-    func createMemory(albumId: Int, title: String, imageData: Data) async -> MemoryFormUseCaseModel.CreateResult
+    func createMemory(album: Album, title: String, imageData: Data) async -> MemoryFormUseCaseModel.CreateResult
 }

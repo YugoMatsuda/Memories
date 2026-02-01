@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 import Domains
+import Repositories
 
 public enum AlbumListUseCaseModel {
     public struct PageInfo: Sendable {
@@ -19,6 +20,7 @@ public enum AlbumListUseCaseModel {
 
         public enum Error: Sendable, Equatable {
             case networkError
+            case offline
             case unknown
         }
     }
@@ -29,6 +31,7 @@ public enum AlbumListUseCaseModel {
 
         public enum Error: Sendable, Equatable {
             case networkError
+            case offline
             case unknown
         }
     }
@@ -36,6 +39,7 @@ public enum AlbumListUseCaseModel {
 
 public protocol AlbumListUseCaseProtocol: Sendable {
     var observeUser: AnyPublisher<User, Never> { get }
+    var localChangePublisher: AnyPublisher<LocalAlbumChangeEvent, Never> { get }
     func display() async -> AlbumListUseCaseModel.DisplayResult
     func next(page: Int) async -> AlbumListUseCaseModel.NextResult
 }

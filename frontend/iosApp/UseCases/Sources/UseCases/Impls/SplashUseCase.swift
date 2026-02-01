@@ -8,27 +8,53 @@ public struct SplashUseCase: SplashUseCaseProtocol, Sendable {
     private let userGateway: any UserGatewayProtocol
     private let userRepository: any UserRepositoryProtocol
     private let authSessionRepository: any AuthSessionRepositoryProtocol
+    private let reachabilityRepository: any ReachabilityRepositoryProtocol
 
     public init(
         userGateway: any UserGatewayProtocol,
         userRepository: any UserRepositoryProtocol,
-        authSessionRepository: any AuthSessionRepositoryProtocol
+        authSessionRepository: any AuthSessionRepositoryProtocol,
+        reachabilityRepository: any ReachabilityRepositoryProtocol
     ) {
         self.userGateway = userGateway
         self.userRepository = userRepository
         self.authSessionRepository = authSessionRepository
+        self.reachabilityRepository = reachabilityRepository
     }
 
     public func launchApp() async -> SplashUseCaseModel.LaunchAppResult {
-        do {
-            let response = try await userGateway.getUser()
-            let user = UserMapper.toDomain(response)
-            userRepository.set(user)
-            return .success(user)
-        } catch let error as APIError {
-            return .failure(mapError(error))
-        } catch {
-            return .failure(.unknown)
+        if reachabilityRepository.isConnected {
+            do {
+                let response = try await userGateway.getUser()
+                let user = UserMapper.toDomain(response)
+                do {
+                    try await userRepository.set(user)
+                } catch {
+                    print("[SplashUseCase] Failed to save user to cache: \(error)")
+                }
+                return .success(user)
+            } catch let error as APIError {
+                // Fallback to cache on error
+                if let cachedUser = await userRepository.get() {
+                    userRepository.notify(cachedUser)
+                    return .success(cachedUser)
+                }
+                return .failure(mapError(error))
+            } catch {
+                // Fallback to cache on error
+                if let cachedUser = await userRepository.get() {
+                    userRepository.notify(cachedUser)
+                    return .success(cachedUser)
+                }
+                return .failure(.unknown)
+            }
+        } else {
+            // Offline: use cache
+            if let cachedUser = await userRepository.get() {
+                userRepository.notify(cachedUser)
+                return .success(cachedUser)
+            }
+            return .failure(.offlineNoCache)
         }
     }
 
