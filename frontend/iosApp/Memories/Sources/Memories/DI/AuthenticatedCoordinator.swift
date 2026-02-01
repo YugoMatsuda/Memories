@@ -46,10 +46,12 @@ public final class AuthenticatedCoordinator: ObservableObject {
 
     private let factory: AuthenticatedViewModelFactory
     private let hasPreviousSession: Bool
+    private let onReLogin: ((String, Int) -> Void)?
 
-    public init(factory: AuthenticatedViewModelFactory, hasPreviousSession: Bool) {
+    public init(factory: AuthenticatedViewModelFactory, hasPreviousSession: Bool, onReLogin: ((String, Int) -> Void)? = nil) {
         self.factory = factory
         self.hasPreviousSession = hasPreviousSession
+        self.onReLogin = onReLogin
     }
 
     public func makeSplashView() -> SplashView {
@@ -75,9 +77,9 @@ public final class AuthenticatedCoordinator: ObservableObject {
             }
         )
         let viewModel = factory.makeLoginViewModel(
-            onSuccess: { [weak self] _ in
-                // New login succeeded, go to splash to fetch new user
-                self?.state = .splash
+            onSuccess: { [weak self] session in
+                // New login succeeded, recreate AuthenticatedRootView with new session
+                self?.onReLogin?(session.token, session.userId)
             },
             continueAsItem: continueAsItem
         )
@@ -104,8 +106,8 @@ public final class AuthenticatedCoordinator: ObservableObject {
         return AlbumFormView(viewModel: viewModel)
     }
 
-    public func makeMemoryFormView(albumId: Int) -> MemoryFormView {
-        let viewModel = factory.makeMemoryFormViewModel(albumId: albumId)
+    public func makeMemoryFormView(album: Album) -> MemoryFormView {
+        let viewModel = factory.makeMemoryFormViewModel(album: album)
         return MemoryFormView(viewModel: viewModel)
     }
 
@@ -124,8 +126,8 @@ public final class AuthenticatedCoordinator: ObservableObject {
         switch sheet {
         case .albumForm(let mode):
             makeAlbumFormView(mode: mode)
-        case .memoryForm(let albumId):
-            makeMemoryFormView(albumId: albumId)
+        case .memoryForm(let album):
+            makeMemoryFormView(album: album)
         }
     }
 }
