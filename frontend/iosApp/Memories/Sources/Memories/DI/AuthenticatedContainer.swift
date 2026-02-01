@@ -154,4 +154,8 @@ public final class AuthenticatedContainer {
             reachabilityRepository: reachabilityRepository
         )
     }()
+
+    public lazy var syncQueuesUseCase: SyncQueuesUseCase = {
+        SyncQueuesUseCase(syncQueueRepository: syncQueueRepository)
+    }()
 }

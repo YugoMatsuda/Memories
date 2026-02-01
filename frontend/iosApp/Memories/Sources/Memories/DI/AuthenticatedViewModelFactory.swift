@@ -64,6 +64,6 @@ public final class AuthenticatedViewModelFactory {
     }
 
     public func makeSyncQueuesViewModel() -> SyncQueuesViewModel {
-        SyncQueuesViewModel(syncQueueRepository: container.syncQueueRepository)
+        SyncQueuesViewModel(useCase: container.syncQueuesUseCase)
     }
 }

@@ -1,5 +1,4 @@
 import SwiftUI
-import Domains
 import UILogics
 
 public struct SyncQueuesView: View {
@@ -11,12 +10,12 @@ public struct SyncQueuesView: View {
 
     public var body: some View {
         List {
-            if viewModel.operations.isEmpty {
+            if viewModel.items.isEmpty {
                 Text("No pending operations")
                     .foregroundStyle(.secondary)
             } else {
-                ForEach(viewModel.operations, id: \.id) { operation in
-                    operationRow(operation)
+                ForEach(viewModel.items) { item in
+                    operationRow(item)
                 }
             }
         }
@@ -27,15 +26,15 @@ public struct SyncQueuesView: View {
         }
     }
 
-    private func operationRow(_ operation: SyncOperation) -> some View {
+    private func operationRow(_ item: SyncQueuesViewModel.SyncOperationUIModel) -> some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text(operation.entityType.displayName)
+                Text(item.entityType)
                     .font(.headline)
-                Text(operation.operationType.displayName)
+                Text(item.operationType)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                if let errorMessage = operation.errorMessage {
+                if let errorMessage = item.errorMessage {
                     Text(errorMessage)
                         .font(.caption)
                         .foregroundStyle(.red)
@@ -44,13 +43,13 @@ public struct SyncQueuesView: View {
 
             Spacer()
 
-            statusBadge(operation.status)
+            statusBadge(item.status)
         }
         .padding(.vertical, 4)
     }
 
     @ViewBuilder
-    private func statusBadge(_ status: SyncOperationStatus) -> some View {
+    private func statusBadge(_ status: SyncQueuesViewModel.SyncOperationUIModel.Status) -> some View {
         Text(status.displayName)
             .font(.caption)
             .padding(.horizontal, 8)
@@ -61,44 +60,9 @@ public struct SyncQueuesView: View {
     }
 }
 
-// MARK: - Display Extensions
+// MARK: - Status Color
 
-extension EntityType {
-    var displayName: String {
-        switch self {
-        case .album:
-            return "Album"
-        case .memory:
-            return "Memory"
-        case .user:
-            return "User"
-        }
-    }
-}
-
-extension OperationType {
-    var displayName: String {
-        switch self {
-        case .create:
-            return "Create"
-        case .update:
-            return "Update"
-        }
-    }
-}
-
-extension SyncOperationStatus {
-    var displayName: String {
-        switch self {
-        case .pending:
-            return "Pending"
-        case .inProgress:
-            return "In Progress"
-        case .failed:
-            return "Failed"
-        }
-    }
-
+extension SyncQueuesViewModel.SyncOperationUIModel.Status {
     var color: Color {
         switch self {
         case .pending:
