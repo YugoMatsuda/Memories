@@ -7,14 +7,19 @@ import UseCases
 @MainActor
 public final class UserProfileViewModel: ObservableObject {
     @Published public var uiModel: UserProfileUIModel
-    @Published public var selectedImage: UIImage?
+    @Published public var selectedImage: UIImage? {
+        didSet {
+            if let image = selectedImage {
+                pendingAvatarImage = image
+            }
+        }
+    }
     @Published public var isShowingImagePicker = false
-    @Published public var isUploadingAvatar = false
     @Published public var isSaving = false
     @Published public var alertItem: AlertItem?
 
+    private var pendingAvatarImage: UIImage?
     private let useCase: UserProfileUseCaseProtocol
-    private var cancellables = Set<AnyCancellable>()
 
     public init(user: User, useCase: UserProfileUseCaseProtocol) {
         self.useCase = useCase
@@ -22,10 +27,8 @@ public final class UserProfileViewModel: ObservableObject {
             name: user.name,
             username: user.username,
             birthday: user.birthday,
-            avatarUrl: user.avatarUrl
+            avatarUrl: user.displayAvatar
         )
-
-        subscribeToImageSelection()
     }
 
     public func selectAvatar() {
@@ -53,66 +56,29 @@ public final class UserProfileViewModel: ObservableObject {
 
     private func saveProfile() async {
         isSaving = true
+
+        let avatarData: Data? = pendingAvatarImage?.jpegData(compressionQuality: 0.8)
+
         let result = await useCase.updateProfile(
             name: uiModel.name.trimmingCharacters(in: .whitespaces),
-            birthday: uiModel.birthday
+            birthday: uiModel.birthday,
+            avatarData: avatarData
         )
+
         isSaving = false
 
         switch result {
-        case .success:
-            break
-        case .failure(let error):
-            showAlert(for: error)
-        }
-    }
-
-    private func subscribeToImageSelection() {
-        $selectedImage
-            .compactMap { $0 }
-            .sink { [weak self] image in
-                Task { [weak self] in
-                    await self?.uploadAvatar(image: image)
-                }
-            }
-            .store(in: &cancellables)
-    }
-
-    private func uploadAvatar(image: UIImage) async {
-        guard let imageData = image.jpegData(compressionQuality: 0.8) else {
-            showAlert(for: .invalidImageData)
-            return
-        }
-
-        isUploadingAvatar = true
-        let result = await useCase.uploadAvatar(imageData: imageData)
-        isUploadingAvatar = false
-
-        switch result {
         case .success(let updatedUser):
-            uiModel.avatarUrl = updatedUser.avatarUrl
+            uiModel.avatarUrl = updatedUser.displayAvatar
+            pendingAvatarImage = nil
+            selectedImage = nil
+        case .successPendingSync(let updatedUser):
+            uiModel.avatarUrl = updatedUser.displayAvatar
+            pendingAvatarImage = nil
             selectedImage = nil
         case .failure(let error):
             showAlert(for: error)
         }
-    }
-
-    private func showAlert(for error: UserProfileUseCaseModel.UploadAvatarResult.Error) {
-        let message: String
-        switch error {
-        case .networkError:
-            message = "Network error. Please check your connection and try again."
-        case .serverError:
-            message = "Server error. Please try again later."
-        case .unknown:
-            message = "An unexpected error occurred. Please try again."
-        }
-
-        alertItem = AlertItem(
-            title: "Upload Failed",
-            message: message,
-            buttons: [Alert.Button.default(Text("OK"))]
-        )
     }
 
     private func showAlert(for error: UserProfileUseCaseModel.UpdateProfileResult.Error) {
@@ -122,6 +88,10 @@ public final class UserProfileViewModel: ObservableObject {
             message = "Network error. Please check your connection and try again."
         case .serverError:
             message = "Server error. Please try again later."
+        case .imageStorageFailed:
+            message = "Failed to save the image locally. Please try again."
+        case .databaseError:
+            message = "Failed to save to local database. Please try again."
         case .unknown:
             message = "An unexpected error occurred. Please try again."
         }
@@ -131,18 +101,6 @@ public final class UserProfileViewModel: ObservableObject {
             message: message,
             buttons: [Alert.Button.default(Text("OK"))]
         )
-    }
-
-    private func showAlert(for error: ImageDataError) {
-        alertItem = AlertItem(
-            title: "Error",
-            message: "Failed to process the selected image.",
-            buttons: [Alert.Button.default(Text("OK"))]
-        )
-    }
-
-    private enum ImageDataError {
-        case invalidImageData
     }
 }
 

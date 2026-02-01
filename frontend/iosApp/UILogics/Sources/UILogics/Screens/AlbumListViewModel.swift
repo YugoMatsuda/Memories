@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 import Domains
+import Repositories
 import UseCases
 import Utilities
 
@@ -27,13 +28,37 @@ public final class AlbumListViewModel: ObservableObject {
             .sink { [weak self] user in
                 guard let self else { return }
                 self.userIcon = UserIconUIModel(
-                    avatarUrl: user.avatarUrl,
+                    avatarUrl: user.displayAvatar,
                     didTap: { [weak self] in
                         self?.router.push(.userProfile(user))
                     }
                 )
             }
             .store(in: &cancellables)
+
+        albumListUseCase.localChangePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] event in
+                self?.handleLocalChange(event)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func handleLocalChange(_ event: LocalAlbumChangeEvent) {
+        guard case .success(let currentData) = displayResult else { return }
+
+        var albums = currentData.albums
+
+        switch event {
+        case .created(let album):
+            albums.insert(album, at: 0)
+        case .updated(let album):
+            if let index = albums.firstIndex(where: { $0.localId == album.localId }) {
+                albums[index] = album
+            }
+        }
+
+        displayResult = .success(makeListData(albums: albums, currentPage: currentData.currentPage, hasMore: currentData.hasMore))
     }
 
     public func onAppear() {
@@ -47,6 +72,7 @@ public final class AlbumListViewModel: ObservableObject {
         guard case .success(let listData) = displayResult,
               listData.hasMore,
               !isLoadingMore else { return }
+        isLoadingMore = true
         Task {
             await loadMore()
         }
@@ -75,15 +101,14 @@ public final class AlbumListViewModel: ObservableObject {
     private func loadMore() async {
         guard case .success(let currentData) = displayResult else { return }
 
-        isLoadingMore = true
         let nextPage = currentData.currentPage + 1
         let result = await albumListUseCase.next(page: nextPage)
         isLoadingMore = false
 
         switch result {
         case .success(let pageInfo):
-            let allAlbums = currentData.albums + pageInfo.albums
-            displayResult = .success(makeListData(albums: allAlbums, currentPage: nextPage, hasMore: pageInfo.hasMore))
+            // pageInfo.albums already contains all albums from repository
+            displayResult = .success(makeListData(albums: pageInfo.albums, currentPage: nextPage, hasMore: pageInfo.hasMore))
         case .failure:
             break
         }
@@ -92,9 +117,10 @@ public final class AlbumListViewModel: ObservableObject {
     private func makeListData(albums: [Album], currentPage: Int, hasMore: Bool) -> ListData {
         let items = albums.map { album in
             AlbumItemUIModel(
-                id: album.id,
+                id: album.localId,
                 title: album.title,
-                coverImageUrl: album.coverImageUrl,
+                coverImageUrl: album.displayCoverImage,
+                syncStatus: album.syncStatus,
                 didTap: { [weak self] in
                     self?.router.push(.albumDetail(album))
                 }
@@ -108,6 +134,13 @@ public final class AlbumListViewModel: ObservableObject {
         case .networkError:
             return ErrorUIModel(
                 message: "Network error. Please check your connection.",
+                retryAction: { [weak self] in
+                    Task { await self?.display() }
+                }
+            )
+        case .offline:
+            return ErrorUIModel(
+                message: "You're offline and have no cached albums.",
                 retryAction: { [weak self] in
                     Task { await self?.display() }
                 }
@@ -157,15 +190,17 @@ extension AlbumListViewModel {
     }
 
     public struct AlbumItemUIModel: Equatable, Identifiable {
-        public let id: Int
+        public let id: UUID
         public let title: String
         public let coverImageUrl: URL?
+        public let syncStatus: SyncStatus
         @EquatableNoop public var didTap: @MainActor () -> Void
 
-        public init(id: Int, title: String, coverImageUrl: URL?, didTap: @escaping @MainActor () -> Void) {
+        public init(id: UUID, title: String, coverImageUrl: URL?, syncStatus: SyncStatus, didTap: @escaping @MainActor () -> Void) {
             self.id = id
             self.title = title
             self.coverImageUrl = coverImageUrl
+            self.syncStatus = syncStatus
             self.didTap = didTap
         }
     }

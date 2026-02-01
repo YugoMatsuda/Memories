@@ -11,14 +11,14 @@ public final class MemoryFormViewModel: ObservableObject {
     @Published public var isSaving = false
     @Published public var alertItem: AlertItem?
 
-    private let albumId: Int
+    private let album: Album
     private let useCase: MemoryFormUseCaseProtocol
     private let router: AuthenticatedRouterProtocol
 
     public var navigationTitle: String { "New Memory" }
 
-    public init(albumId: Int, useCase: MemoryFormUseCaseProtocol, router: AuthenticatedRouterProtocol) {
-        self.albumId = albumId
+    public init(album: Album, useCase: MemoryFormUseCaseProtocol, router: AuthenticatedRouterProtocol) {
+        self.album = album
         self.useCase = useCase
         self.router = router
     }
@@ -49,14 +49,14 @@ public final class MemoryFormViewModel: ObservableObject {
 
         isSaving = true
         let result = await useCase.createMemory(
-            albumId: albumId,
+            album: album,
             title: title.trimmingCharacters(in: .whitespaces),
             imageData: imageData
         )
         isSaving = false
 
         switch result {
-        case .success:
+        case .success, .successPendingSync:
             router.dismissSheet()
         case .failure(let error):
             showAlert(for: error)
@@ -68,6 +68,10 @@ public final class MemoryFormViewModel: ObservableObject {
         switch error {
         case .networkError:
             message = "Network error. Please check your connection and try again."
+        case .imageStorageFailed:
+            message = "Failed to save image. Please try again."
+        case .databaseError:
+            message = "Failed to save memory. Please try again."
         case .unknown:
             message = "An unexpected error occurred. Please try again."
         }

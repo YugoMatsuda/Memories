@@ -42,7 +42,7 @@ public final class AlbumFormViewModel: ObservableObject {
             self.coverImage = nil
         case .edit(let album):
             self.title = album.title
-            self.coverImage = album.coverImageUrl.map { .uploadedImage($0) }
+            self.coverImage = album.displayCoverImage.map { .uploadedImage($0) }
         }
     }
 
@@ -78,7 +78,7 @@ public final class AlbumFormViewModel: ObservableObject {
         case .create:
             await createAlbum(imageData: imageData)
         case .edit(let album):
-            await updateAlbum(albumId: album.id, imageData: imageData)
+            await updateAlbum(album: album, imageData: imageData)
         }
 
         isSaving = false
@@ -91,22 +91,22 @@ public final class AlbumFormViewModel: ObservableObject {
         )
 
         switch result {
-        case .success:
+        case .success, .successPendingSync:
             router.dismissSheet()
         case .failure(let error):
             showAlert(for: error)
         }
     }
 
-    private func updateAlbum(albumId: Int, imageData: Data?) async {
+    private func updateAlbum(album: Album, imageData: Data?) async {
         let result = await useCase.updateAlbum(
-            albumId: albumId,
+            album: album,
             title: title.trimmingCharacters(in: .whitespaces),
             coverImageData: imageData
         )
 
         switch result {
-        case .success:
+        case .success, .successPendingSync:
             router.dismissSheet()
         case .failure(let error):
             showAlert(for: error)
@@ -120,6 +120,10 @@ public final class AlbumFormViewModel: ObservableObject {
             message = "Network error. Please check your connection and try again."
         case .serverError:
             message = "Server error. Please try again later."
+        case .imageStorageFailed:
+            message = "Failed to save the image locally. Please try again."
+        case .databaseError:
+            message = "Failed to save to local database. Please try again."
         case .unknown:
             message = "An unexpected error occurred. Please try again."
         }
@@ -140,6 +144,10 @@ public final class AlbumFormViewModel: ObservableObject {
             message = "Server error. Please try again later."
         case .notFound:
             message = "Album not found. It may have been deleted."
+        case .imageStorageFailed:
+            message = "Failed to save the image locally. Please try again."
+        case .databaseError:
+            message = "Failed to save to local database. Please try again."
         case .unknown:
             message = "An unexpected error occurred. Please try again."
         }

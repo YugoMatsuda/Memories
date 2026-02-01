@@ -52,6 +52,16 @@ public final class SplashViewModel: ObservableObject {
                     Task { await self?.launchApp() }
                 }
             ))
+        case .offlineNoCache:
+            state = .error(.init(
+                icon: "wifi.slash",
+                iconColor: .orange,
+                message: "You're offline with no cached data",
+                buttonTitle: "Retry",
+                action: { [weak self] in
+                    Task { await self?.launchApp() }
+                }
+            ))
         case .serverError:
             state = .error(.init(
                 icon: "exclamationmark.triangle",

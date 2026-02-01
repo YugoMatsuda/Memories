@@ -1,15 +1,18 @@
 import Foundation
+import Combine
 import Domains
+import Repositories
 import UseCases
 import Utilities
 
 @MainActor
 public final class AlbumDetailViewModel: ObservableObject {
     @Published public private(set) var displayResult: DisplayResult = .loading
+    @Published public private(set) var album: Album
 
-    public let album: Album
     private let albumDetailUseCase: AlbumDetailUseCaseProtocol
     private let router: AuthenticatedRouterProtocol
+    private var cancellables = Set<AnyCancellable>()
 
     private var isLoadingMore = false
 
@@ -17,6 +20,20 @@ public final class AlbumDetailViewModel: ObservableObject {
         self.album = album
         self.albumDetailUseCase = albumDetailUseCase
         self.router = router
+
+        albumDetailUseCase.localChangePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] event in
+                self?.handleLocalChange(event)
+            }
+            .store(in: &cancellables)
+
+        albumDetailUseCase.observeAlbumUpdate
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] event in
+                self?.handleAlbumChange(event)
+            }
+            .store(in: &cancellables)
     }
 
     public func onAppear() {
@@ -30,6 +47,7 @@ public final class AlbumDetailViewModel: ObservableObject {
         guard case .success(let listData) = displayResult,
               listData.hasMore,
               !isLoadingMore else { return }
+        isLoadingMore = true
         Task {
             await loadMore()
         }
@@ -40,12 +58,12 @@ public final class AlbumDetailViewModel: ObservableObject {
     }
 
     public func showCreateMemoryForm() {
-        router.showSheet(.memoryForm(albumId: album.id))
+        router.showSheet(.memoryForm(album: album))
     }
 
     private func display() async {
         displayResult = .loading
-        let result = await albumDetailUseCase.display(albumId: album.id)
+        let result = await albumDetailUseCase.display(album: album)
 
         switch result {
         case .success(let pageInfo):
@@ -58,27 +76,48 @@ public final class AlbumDetailViewModel: ObservableObject {
     private func loadMore() async {
         guard case .success(let currentData) = displayResult else { return }
 
-        isLoadingMore = true
         let nextPage = currentData.currentPage + 1
-        let result = await albumDetailUseCase.next(albumId: album.id, page: nextPage)
+        let result = await albumDetailUseCase.next(album: album, page: nextPage)
         isLoadingMore = false
 
         switch result {
         case .success(let pageInfo):
-            let allMemories = currentData.memories + pageInfo.memories
-            displayResult = .success(makeListData(memories: allMemories, currentPage: nextPage, hasMore: pageInfo.hasMore))
+            displayResult = .success(makeListData(memories: pageInfo.memories, currentPage: nextPage, hasMore: pageInfo.hasMore))
         case .failure:
             break
+        }
+    }
+
+    private func handleLocalChange(_ event: LocalMemoryChangeEvent) {
+        guard case .success(let currentData) = displayResult else { return }
+
+        switch event {
+        case .created(let memory):
+            guard memory.albumLocalId == album.localId else { return }
+            var memories = currentData.memories
+            memories.insert(memory, at: 0)
+            displayResult = .success(makeListData(memories: memories, currentPage: currentData.currentPage, hasMore: currentData.hasMore))
+        }
+    }
+
+    private func handleAlbumChange(_ event: LocalAlbumChangeEvent) {
+        switch event {
+        case .created:
+            break
+        case .updated(let updatedAlbum):
+            guard updatedAlbum.localId == album.localId else { return }
+            album = updatedAlbum
         }
     }
 
     private func makeListData(memories: [Memory], currentPage: Int, hasMore: Bool) -> ListData {
         let items = memories.map { memory in
             MemoryItemUIModel(
-                id: memory.id,
+                id: memory.localId,
                 title: memory.title,
-                imageUrl: memory.imageUrl,
+                displayImage: memory.displayImage,
                 createdAt: memory.createdAt,
+                syncStatus: memory.syncStatus,
                 didTap: {
                     // TODO: Navigate to memory detail
                 }
@@ -89,6 +128,13 @@ public final class AlbumDetailViewModel: ObservableObject {
 
     private func mapDisplayError(_ error: AlbumDetailUseCaseModel.DisplayResult.Error) -> ErrorUIModel {
         switch error {
+        case .offline:
+            return ErrorUIModel(
+                message: "You are offline. No cached memories available.",
+                retryAction: { [weak self] in
+                    Task { await self?.display() }
+                }
+            )
         case .networkError:
             return ErrorUIModel(
                 message: "Network error. Please check your connection.",
@@ -131,17 +177,19 @@ extension AlbumDetailViewModel {
     }
 
     public struct MemoryItemUIModel: Equatable, Identifiable {
-        public let id: Int
+        public let id: UUID
         public let title: String
-        public let imageUrl: URL
+        public let displayImage: URL?
         public let createdAt: Date
+        public let syncStatus: SyncStatus
         @EquatableNoop public var didTap: @MainActor () -> Void
 
-        public init(id: Int, title: String, imageUrl: URL, createdAt: Date, didTap: @escaping @MainActor () -> Void) {
+        public init(id: UUID, title: String, displayImage: URL?, createdAt: Date, syncStatus: SyncStatus, didTap: @escaping @MainActor () -> Void) {
             self.id = id
             self.title = title
-            self.imageUrl = imageUrl
+            self.displayImage = displayImage
             self.createdAt = createdAt
+            self.syncStatus = syncStatus
             self.didTap = didTap
         }
     }
