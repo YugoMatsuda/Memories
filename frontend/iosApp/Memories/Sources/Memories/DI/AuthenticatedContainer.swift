@@ -48,7 +48,7 @@ public final class AuthenticatedContainer {
     }()
 
     public lazy var userProfileUseCase: UserProfileUseCase = {
-        UserProfileUseCase(userGateway: userGateway, userRepository: userRepository)
+        UserProfileUseCase(userGateway: userGateway, userRepository: userRepository, authSessionRepository: AppConfig.authSessionRepository)
     }()
 
     public lazy var albumFormUseCase: AlbumFormUseCase = {

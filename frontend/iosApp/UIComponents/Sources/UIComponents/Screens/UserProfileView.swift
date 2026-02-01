@@ -31,6 +31,15 @@ public struct UserProfileView: View {
                     selection: $viewModel.uiModel.birthday
                 )
             }
+
+            Section {
+                Button(role: .destructive) {
+                    viewModel.showLogoutConfirmation()
+                } label: {
+                    Text("Logout")
+                        .frame(maxWidth: .infinity)
+                }
+            }
         }
         .navigationTitle("Profile")
         .toolbar {

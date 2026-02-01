@@ -38,6 +38,19 @@ public final class UserProfileViewModel: ObservableObject {
         }
     }
 
+    public func showLogoutConfirmation() {
+        alertItem = AlertItem(
+            title: "Logout",
+            message: "Are you sure you want to logout?",
+            buttons: [
+                Alert.Button.destructive(Text("Logout")) { [weak self] in
+                    self?.useCase.logout()
+                },
+                Alert.Button.cancel()
+            ]
+        )
+    }
+
     private func saveProfile() async {
         isSaving = true
         let result = await useCase.updateProfile(

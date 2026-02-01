@@ -8,10 +8,12 @@ import Utilities
 public struct UserProfileUseCase: UserProfileUseCaseProtocol, Sendable {
     private let userGateway: UserGatewayProtocol
     private let userRepository: UserRepositoryProtocol
+    private let authSessionRepository: AuthSessionRepositoryProtocol
 
-    public init(userGateway: UserGatewayProtocol, userRepository: UserRepositoryProtocol) {
+    public init(userGateway: UserGatewayProtocol, userRepository: UserRepositoryProtocol, authSessionRepository: AuthSessionRepositoryProtocol) {
         self.userGateway = userGateway
         self.userRepository = userRepository
+        self.authSessionRepository = authSessionRepository
     }
 
     public func uploadAvatar(imageData: Data) async -> UserProfileUseCaseModel.UploadAvatarResult {
@@ -73,5 +75,9 @@ public struct UserProfileUseCase: UserProfileUseCaseProtocol, Sendable {
         default:
             return .unknown
         }
+    }
+
+    public func logout() {
+        authSessionRepository.clearSession()
     }
 }

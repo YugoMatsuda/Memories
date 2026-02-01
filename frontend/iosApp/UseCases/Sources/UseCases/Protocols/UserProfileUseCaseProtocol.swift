@@ -4,6 +4,7 @@ import Domains
 public protocol UserProfileUseCaseProtocol: Sendable {
     func uploadAvatar(imageData: Data) async -> UserProfileUseCaseModel.UploadAvatarResult
     func updateProfile(name: String, birthday: Date?) async -> UserProfileUseCaseModel.UpdateProfileResult
+    func logout()
 }
 
 public enum UserProfileUseCaseModel {
