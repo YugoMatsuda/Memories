@@ -6,7 +6,7 @@ import UseCases
 public enum RootViewState: Equatable {
     case launching
     case unauthenticated
-    case authenticated(token: String, hasPreviousSession: Bool)
+    case authenticated(token: String, userId: Int, hasPreviousSession: Bool)
 }
 
 @MainActor
@@ -31,14 +31,14 @@ public final class RootViewModel: ObservableObject {
         let result = rootUseCase.checkPreviousSession()
         switch result {
         case .loggedIn(let session):
-            state = .authenticated(token: session.token, hasPreviousSession: true)
+            state = .authenticated(token: session.token, userId: session.userId, hasPreviousSession: true)
         case .notLoggedIn:
             state = .unauthenticated
         }
     }
 
-    public func didLogin(token: String) {
-        state = .authenticated(token: token, hasPreviousSession: false)
+    public func didLogin(token: String, userId: Int) {
+        state = .authenticated(token: token, userId: userId, hasPreviousSession: false)
     }
 
     private func handleLogout() {

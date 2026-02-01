@@ -4,6 +4,7 @@ import KeychainAccess
 public enum KeychainHelper {
     public enum Key: String {
         case accessToken = "accessToken"
+        case userId = "userId"
     }
 
     static let keychain: @Sendable () -> Keychain = {

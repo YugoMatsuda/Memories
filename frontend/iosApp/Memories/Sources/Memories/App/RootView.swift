@@ -16,13 +16,13 @@ public struct RootView: View {
 
             case .unauthenticated:
                 UnauthenticatedRootView(
-                    onLogin: { token in
-                        viewModel.didLogin(token: token)
+                    onLogin: { token, userId in
+                        viewModel.didLogin(token: token, userId: userId)
                     }
                 )
 
-            case .authenticated(let token, let hasPreviousSession):
-                AuthenticatedRootView(token: token, hasPreviousSession: hasPreviousSession)
+            case .authenticated(let token, let userId, let hasPreviousSession):
+                AuthenticatedRootView(token: token, userId: userId, hasPreviousSession: hasPreviousSession)
             }
         }
         .animation(.default, value: viewModel.state)
@@ -31,11 +31,11 @@ public struct RootView: View {
 }
 
 struct UnauthenticatedRootView: View {
-    let onLogin: (String) -> Void
+    let onLogin: (String, Int) -> Void
 
     @StateObject private var coordinator: UnauthenticatedCoordinator
 
-    init(onLogin: @escaping (String) -> Void) {
+    init(onLogin: @escaping (String, Int) -> Void) {
         self.onLogin = onLogin
         _coordinator = StateObject(wrappedValue: UnauthenticatedCoordinator(
             factory: UnauthenticatedViewModelFactory(),
@@ -52,8 +52,8 @@ struct AuthenticatedRootView: View {
     @StateObject private var coordinator: AuthenticatedCoordinator
     @StateObject private var router: AuthenticatedRouter
 
-    init(token: String, hasPreviousSession: Bool) {
-        let container = AuthenticatedContainer(token: token)
+    init(token: String, userId: Int, hasPreviousSession: Bool) {
+        let container = AuthenticatedContainer(token: token, userId: userId)
         let factory = AuthenticatedViewModelFactory(container: container)
         let coordinator = AuthenticatedCoordinator(
             factory: factory,

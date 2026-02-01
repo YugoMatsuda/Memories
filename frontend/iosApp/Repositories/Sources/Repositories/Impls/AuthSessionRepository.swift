@@ -9,10 +9,12 @@ public final class AuthSessionRepository: AuthSessionRepositoryProtocol, @unchec
     public init() {}
 
     public func restore() -> AuthSession? {
-        guard let token = KeychainHelper.get(.accessToken) else {
+        guard let token = KeychainHelper.get(.accessToken),
+              let userIdString = KeychainHelper.get(.userId),
+              let userId = Int(userIdString) else {
             return nil
         }
-        let session = AuthSession(token: token)
+        let session = AuthSession(token: token, userId: userId)
         sessionSubject.send(session)
         return session
     }
@@ -27,11 +29,13 @@ public final class AuthSessionRepository: AuthSessionRepositoryProtocol, @unchec
 
     public func save(session: AuthSession) {
         KeychainHelper.set(session.token, for: .accessToken)
+        KeychainHelper.set(String(session.userId), for: .userId)
         sessionSubject.send(session)
     }
 
     public func clearSession() {
         KeychainHelper.remove(.accessToken)
+        KeychainHelper.remove(.userId)
         sessionSubject.send(nil)
     }
 }

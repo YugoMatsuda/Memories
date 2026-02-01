@@ -14,6 +14,7 @@ class LoginRequest(BaseModel):
 
 class TokenResponse(BaseModel):
     token: str
+    user_id: int
 
 
 class UserBase(BaseModel):

@@ -8,9 +8,11 @@ import UseCases
 @MainActor
 public final class AuthenticatedContainer {
     private let token: String
+    private let userId: Int
 
-    public init(token: String) {
+    public init(token: String, userId: Int) {
         self.token = token
+        self.userId = userId
     }
 
     private lazy var apiClient: AuthenticatedAPIClient = {
@@ -30,7 +32,7 @@ public final class AuthenticatedContainer {
     }()
 
     private lazy var userRepository: UserRepository = {
-        UserRepository()
+        UserRepository(userId: userId)
     }()
 
     public lazy var splashUseCase: SplashUseCase = {

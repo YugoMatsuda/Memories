@@ -19,7 +19,7 @@ public struct LoginUseCase: LoginUseCaseProtocol, Sendable {
     public func login(username: String, password: String) async -> LoginUseCaseModel.LoginResult {
         do {
             let response = try await authGateway.login(username: username, password: password)
-            let session = AuthSession(token: response.token)
+            let session = AuthSession(token: response.token, userId: response.userId)
             authSessionRepository.save(session: session)
             return .success(session)
         } catch let error as APIError {

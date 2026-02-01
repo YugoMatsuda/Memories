@@ -54,7 +54,7 @@ def login(payload: schemas.LoginRequest, db: Session = Depends(get_db)):
             detail="Invalid credentials",
         )
     token = auth.create_token(db, user)
-    return schemas.TokenResponse(token=token)
+    return schemas.TokenResponse(token=token, user_id=user.id)
 
 
 @app.get("/me", response_model=schemas.UserOut)
