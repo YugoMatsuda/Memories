@@ -89,7 +89,7 @@ public struct AlbumDetailView: View {
         Button {
             item.didTap()
         } label: {
-            WebImage(url: item.imageUrl)
+            WebImage(url: item.displayImage)
                 .resizable()
                 .scaledToFit()
                 .clipShape(RoundedRectangle(cornerRadius: 8))

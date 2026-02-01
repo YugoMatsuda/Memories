@@ -67,26 +67,23 @@ public struct UserProfileView: View {
             Button {
                 viewModel.selectAvatar()
             } label: {
-                ZStack {
-                    avatarImage
-
-                    if viewModel.isUploadingAvatar {
-                        Circle()
-                            .fill(Color.black.opacity(0.4))
-                            .frame(width: 100, height: 100)
-                        ProgressView()
-                            .tint(.white)
-                    }
-                }
+                avatarImage
             }
-            .disabled(viewModel.isUploadingAvatar)
+            .disabled(viewModel.isSaving)
             Spacer()
         }
     }
 
     @ViewBuilder
     private var avatarImage: some View {
-        if let url = viewModel.uiModel.avatarUrl {
+        if let selectedImage = viewModel.selectedImage {
+            Image(uiImage: selectedImage)
+                .resizable()
+                .scaledToFill()
+                .frame(width: 100, height: 100)
+                .clipped()
+                .clipShape(Circle())
+        } else if let url = viewModel.uiModel.avatarUrl {
             WebImage(url: url)
                 .resizable()
                 .scaledToFill()
