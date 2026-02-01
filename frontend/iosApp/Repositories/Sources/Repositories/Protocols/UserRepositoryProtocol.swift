@@ -4,7 +4,16 @@ import Domains
 
 public protocol UserRepositoryProtocol: Sendable {
     var userId: Int { get }
-    var userPublisher: AnyPublisher<User?, Never> { get }
-    func get() -> User?
-    func set(_ user: User)
+
+    // Read
+    func get() async -> User?
+
+    // Write (always fires event)
+    func set(_ user: User) async throws
+
+    // Notify (fires event without writing to DB)
+    func notify(_ user: User)
+
+    // Publisher
+    var userPublisher: AnyPublisher<User, Never> { get }
 }
