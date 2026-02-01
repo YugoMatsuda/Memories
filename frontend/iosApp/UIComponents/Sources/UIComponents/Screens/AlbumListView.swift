@@ -25,7 +25,8 @@ public struct AlbumListView: View {
             }
             .padding()
         }
-        .navigationTitle(viewModel.isNetworkDebugMode ? "Memories (Network Debug Mode)" : "Memories")
+        .navigationTitle(viewModel.isNetworkDebugMode ? "Memories (Debug)" : "Memories")
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 syncButton
@@ -94,6 +95,9 @@ public struct AlbumListView: View {
                             .padding()
                     }
                 }
+            }
+            .refreshable {
+                await viewModel.onRefresh()
             }
         }
     }

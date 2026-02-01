@@ -41,18 +41,18 @@ public struct User: Sendable, Equatable, Hashable, Identifiable {
 
     public func with(
         name: String? = nil,
-        birthday: Date?? = nil,
-        avatarUrl: URL?? = nil,
-        avatarLocalPath: String?? = nil,
+        birthday: OptionalUpdate<Date> = .noChange,
+        avatarUrl: OptionalUpdate<URL> = .noChange,
+        avatarLocalPath: OptionalUpdate<String> = .noChange,
         syncStatus: SyncStatus? = nil
     ) -> User {
         User(
             id: self.id,
             name: name ?? self.name,
             username: self.username,
-            birthday: birthday ?? self.birthday,
-            avatarUrl: avatarUrl ?? self.avatarUrl,
-            avatarLocalPath: avatarLocalPath ?? self.avatarLocalPath,
+            birthday: birthday.resolve(current: self.birthday),
+            avatarUrl: avatarUrl.resolve(current: self.avatarUrl),
+            avatarLocalPath: avatarLocalPath.resolve(current: self.avatarLocalPath),
             syncStatus: syncStatus ?? self.syncStatus
         )
     }

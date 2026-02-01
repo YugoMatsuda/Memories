@@ -14,6 +14,7 @@ public final class LocalSyncOperation: DomainConvertible {
     public var localId: UUID
     public var createdAt: Date
     public var statusRaw: String
+    public var errorMessage: String?
 
     // MARK: - DomainConvertible
 
@@ -24,10 +25,12 @@ public final class LocalSyncOperation: DomainConvertible {
         self.localId = entity.localId
         self.createdAt = entity.createdAt
         self.statusRaw = entity.status.rawValue
+        self.errorMessage = entity.errorMessage
     }
 
     public func update(from entity: SyncOperation) {
         self.statusRaw = entity.status.rawValue
+        self.errorMessage = entity.errorMessage
     }
 
     public func entity() -> SyncOperation {
@@ -37,7 +40,8 @@ public final class LocalSyncOperation: DomainConvertible {
             operationType: OperationType(rawValue: operationTypeRaw) ?? .create,
             localId: localId,
             createdAt: createdAt,
-            status: SyncOperationStatus(rawValue: statusRaw) ?? .pending
+            status: SyncOperationStatus(rawValue: statusRaw) ?? .pending,
+            errorMessage: errorMessage
         )
     }
 }

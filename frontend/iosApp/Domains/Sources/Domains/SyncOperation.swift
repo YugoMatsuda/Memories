@@ -7,6 +7,7 @@ public struct SyncOperation: Sendable, Identifiable, Hashable {
     public let localId: UUID
     public let createdAt: Date
     public var status: SyncOperationStatus
+    public var errorMessage: String?
 
     public init(
         id: UUID,
@@ -14,7 +15,8 @@ public struct SyncOperation: Sendable, Identifiable, Hashable {
         operationType: OperationType,
         localId: UUID,
         createdAt: Date,
-        status: SyncOperationStatus
+        status: SyncOperationStatus,
+        errorMessage: String? = nil
     ) {
         self.id = id
         self.entityType = entityType
@@ -22,6 +24,7 @@ public struct SyncOperation: Sendable, Identifiable, Hashable {
         self.localId = localId
         self.createdAt = createdAt
         self.status = status
+        self.errorMessage = errorMessage
     }
 }
 

@@ -43,14 +43,27 @@ public final class AlbumRepository: AlbumRepositoryProtocol, @unchecked Sendable
     // MARK: - Server Sync (no event firing)
 
     public func syncSet(_ albums: [Album]) async throws {
+        // Get existing albums to preserve localIds
+        let existingAlbums = await getAll()
+        let existingByServerId = Dictionary(uniqueKeysWithValues: existingAlbums.compactMap { album -> (Int, Album)? in
+            guard let serverId = album.id else { return nil }
+            return (serverId, album)
+        })
+
         // Delete only synced items, preserve pending ones
         try await database.delete(
             where: #Predicate<LocalAlbum> { $0.syncStatusRaw == "synced" }
         )
+
         for album in albums {
-            let targetLocalId = album.localId
+            // Preserve existing localId if album was synced from this device
+            var albumToSave = album
+            if let serverId = album.id, let existing = existingByServerId[serverId] {
+                albumToSave = album.with(localId: existing.localId)
+            }
+            let targetLocalId = albumToSave.localId
             try await database.upsert(
-                album,
+                albumToSave,
                 as: LocalAlbum.self,
                 predicate: #Predicate { $0.localId == targetLocalId }
             )

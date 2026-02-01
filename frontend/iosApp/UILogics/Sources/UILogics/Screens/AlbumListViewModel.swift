@@ -92,6 +92,10 @@ public final class AlbumListViewModel: ObservableObject {
         }
     }
 
+    public func onRefresh() async {
+        await display()
+    }
+
     public func onLoadMore() {
         guard case .success(let listData) = displayResult,
               listData.hasMore,

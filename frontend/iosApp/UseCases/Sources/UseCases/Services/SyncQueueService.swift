@@ -66,6 +66,11 @@ public final class SyncQueueService: SyncQueueServiceProtocol, @unchecked Sendab
     public func processQueue() async {
         print("[SyncQueueService] processQueue")
         guard reachabilityRepository.isConnected else { return }
+        guard syncQueueRepository.tryStartSyncing() else {
+            print("[SyncQueueService] Already processing, skipping")
+            return
+        }
+        defer { syncQueueRepository.stopSyncing() }
 
         let operations = await syncQueueRepository.peek()
         guard !operations.isEmpty else {
@@ -73,11 +78,9 @@ public final class SyncQueueService: SyncQueueServiceProtocol, @unchecked Sendab
             return
         }
 
-        syncQueueRepository.setSyncing(true)
-
         for operation in operations {
             do {
-                try await syncQueueRepository.updateStatus(id: operation.id, status: .inProgress)
+                try await syncQueueRepository.updateStatus(id: operation.id, status: .inProgress, errorMessage: nil)
             } catch {
                 print("[SyncQueueService] Failed to update sync status to inProgress: \(error)")
             }
@@ -89,16 +92,16 @@ public final class SyncQueueService: SyncQueueServiceProtocol, @unchecked Sendab
                 } catch {
                     print("[SyncQueueService] Failed to remove completed sync operation: \(error)")
                 }
-            } catch {
+            } catch let syncError {
+                let errorMessage = mapErrorMessage(syncError)
+                print("[SyncQueueService] Sync failed: \(errorMessage)")
                 do {
-                    try await syncQueueRepository.updateStatus(id: operation.id, status: .failed)
+                    try await syncQueueRepository.updateStatus(id: operation.id, status: .failed, errorMessage: errorMessage)
                 } catch {
                     print("[SyncQueueService] Failed to update sync status to failed: \(error)")
                 }
             }
         }
-
-        syncQueueRepository.setSyncing(false)
     }
 
     // MARK: - Private
@@ -143,13 +146,18 @@ public final class SyncQueueService: SyncQueueServiceProtocol, @unchecked Sendab
 
     private func executeAlbumCreate(_ operation: SyncOperation) async throws {
         guard var album = await albumRepository.get(byLocalId: operation.localId) else {
+            print("[SyncQueueService] Album not found for localId: \(operation.localId)")
             return
         }
+
+        print("[SyncQueueService] executeAlbumCreate - localId: \(album.localId), serverId: \(String(describing: album.id))")
 
         // 1. Create album on server if not yet synced
         if album.id == nil {
             let response = try await albumGateway.createAlbum(title: album.title, coverImageUrl: nil)
+            print("[SyncQueueService] Album created on server with id: \(response.id)")
             try await albumRepository.markAsSynced(localId: operation.localId, serverId: response.id)
+            print("[SyncQueueService] Album marked as synced")
             album = album.with(id: response.id, syncStatus: .synced)
         }
 
@@ -200,13 +208,25 @@ public final class SyncQueueService: SyncQueueServiceProtocol, @unchecked Sendab
 
     private func executeMemoryCreate(_ operation: SyncOperation) async throws {
         guard let memory = await memoryRepository.get(byLocalId: operation.localId) else {
-            return
+            print("[SyncQueueService] Memory not found: \(operation.localId)")
+            throw SyncError.entityNotFound
         }
 
-        // Check if album is synced
-        guard let albumServerId = memory.albumId else {
-            // Album not synced yet, keep in queue
-            throw SyncError.dependencyNotSynced
+        print("[SyncQueueService] Memory albumId: \(String(describing: memory.albumId)), albumLocalId: \(memory.albumLocalId)")
+
+        // Get album server ID (either from memory or by looking up album)
+        let albumServerId: Int
+        if let id = memory.albumId {
+            albumServerId = id
+        } else {
+            // Album was created offline, look up by localId
+            let album = await albumRepository.get(byLocalId: memory.albumLocalId)
+            print("[SyncQueueService] Album lookup result: \(String(describing: album)), serverId: \(String(describing: album?.id))")
+            guard let album = album, let id = album.id else {
+                // Album not synced yet, keep in queue
+                throw SyncError.dependencyNotSynced
+            }
+            albumServerId = id
         }
 
         // Get local image data
@@ -257,10 +277,26 @@ public final class SyncQueueService: SyncQueueServiceProtocol, @unchecked Sendab
         let syncedUser = UserMapper.toDomain(response)
         try await userRepository.set(syncedUser)
     }
+
+    private func mapErrorMessage(_ error: Error) -> String {
+        if let syncError = error as? SyncError {
+            switch syncError {
+            case .dependencyNotSynced:
+                return "Album not synced yet"
+            case .entityNotFound:
+                return "Entity not found in local DB"
+            case .imageNotFound:
+                return "Image file not found"
+            }
+        }
+        return error.localizedDescription
+    }
 }
 
 // MARK: - SyncError
 
 private enum SyncError: Error {
     case dependencyNotSynced
+    case entityNotFound
+    case imageNotFound
 }

@@ -17,8 +17,9 @@ public protocol SyncQueueRepositoryProtocol: Sendable {
     func peek() async -> [SyncOperation]
     func getAll() async -> [SyncOperation]
     func remove(id: UUID) async throws
-    func updateStatus(id: UUID, status: SyncOperationStatus) async throws
-    func setSyncing(_ isSyncing: Bool)
+    func updateStatus(id: UUID, status: SyncOperationStatus, errorMessage: String?) async throws
+    func tryStartSyncing() -> Bool
+    func stopSyncing()
     func refreshState() async
     var statePublisher: AnyPublisher<SyncQueueState, Never> { get }
 }

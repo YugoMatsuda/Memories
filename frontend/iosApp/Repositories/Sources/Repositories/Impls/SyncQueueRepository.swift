@@ -6,6 +6,7 @@ import Domains
 public final class SyncQueueRepository: SyncQueueRepositoryProtocol, @unchecked Sendable {
     private let database: SwiftDatabase
     private let stateSubject = CurrentValueSubject<SyncQueueState, Never>(SyncQueueState(pendingCount: 0, isSyncing: false))
+    private let lock = NSLock()
 
     public var statePublisher: AnyPublisher<SyncQueueState, Never> {
         stateSubject.eraseToAnyPublisher()
@@ -51,14 +52,15 @@ public final class SyncQueueRepository: SyncQueueRepositoryProtocol, @unchecked 
         await refreshState()
     }
 
-    public func updateStatus(id: UUID, status: SyncOperationStatus) async throws {
+    public func updateStatus(id: UUID, status: SyncOperationStatus, errorMessage: String?) async throws {
         let targetId = id
         let descriptor = FetchDescriptor<LocalSyncOperation>(
             predicate: #Predicate { $0.id == targetId }
         )
-        let operations = try await database.fetch(descriptor)
+        let operations: [SyncOperation] = try await database.fetch(descriptor)
         guard var operation = operations.first else { return }
         operation.status = status
+        operation.errorMessage = errorMessage
         try await database.upsert(
             operation,
             as: LocalSyncOperation.self,
@@ -67,9 +69,22 @@ public final class SyncQueueRepository: SyncQueueRepositoryProtocol, @unchecked 
         await refreshState()
     }
 
-    public func setSyncing(_ isSyncing: Bool) {
+    public func tryStartSyncing() -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        if stateSubject.value.isSyncing {
+            return false
+        }
         let current = stateSubject.value
-        stateSubject.send(SyncQueueState(pendingCount: current.pendingCount, isSyncing: isSyncing))
+        stateSubject.send(SyncQueueState(pendingCount: current.pendingCount, isSyncing: true))
+        return true
+    }
+
+    public func stopSyncing() {
+        lock.lock()
+        defer { lock.unlock() }
+        let current = stateSubject.value
+        stateSubject.send(SyncQueueState(pendingCount: current.pendingCount, isSyncing: false))
     }
 
     public func refreshState() async {

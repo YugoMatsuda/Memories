@@ -49,8 +49,9 @@ public struct UserProfileUseCase: UserProfileUseCaseProtocol, Sendable {
         // 2. Update local DB (Optimistic)
         let updatedUser = currentUser.with(
             name: name,
-            birthday: birthday,
-            avatarLocalPath: localAvatarPath,
+            birthday: .from(birthday),
+            avatarUrl: avatarData != nil ? .setNil : .noChange,
+            avatarLocalPath: .from(localAvatarPath),
             syncStatus: .pendingUpdate
         )
         do {

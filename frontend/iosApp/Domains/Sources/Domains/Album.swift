@@ -46,6 +46,7 @@ public struct Album: Sendable, Equatable, Hashable, Identifiable {
 
     public func with(
         id: Int? = nil,
+        localId: UUID? = nil,
         title: String? = nil,
         coverImageUrl: URL?? = nil,
         coverImageLocalPath: String?? = nil,
@@ -53,7 +54,7 @@ public struct Album: Sendable, Equatable, Hashable, Identifiable {
     ) -> Album {
         Album(
             id: id ?? self.id,
-            localId: self.localId,
+            localId: localId ?? self.localId,
             title: title ?? self.title,
             coverImageUrl: coverImageUrl ?? self.coverImageUrl,
             coverImageLocalPath: coverImageLocalPath ?? self.coverImageLocalPath,

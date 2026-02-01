@@ -21,6 +21,7 @@ public struct SyncQueuesView: View {
             }
         }
         .navigationTitle("Sync Queues")
+        .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             viewModel.onAppear()
         }
@@ -34,6 +35,11 @@ public struct SyncQueuesView: View {
                 Text(operation.operationType.displayName)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+                if let errorMessage = operation.errorMessage {
+                    Text(errorMessage)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
             }
 
             Spacer()

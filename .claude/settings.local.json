@@ -9,7 +9,13 @@
       "Bash(python3:*)",
       "WebFetch(domain:localhost)",
       "Bash(sqlite3:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(swift build:*)",
+      "Bash(xcodebuild:*)",
+      "Bash(git commit:*)",
+      "Bash(git filter-branch:*)",
+      "Bash(git stash:*)",
+      "Bash(ls:*)"
     ]
   }
 }

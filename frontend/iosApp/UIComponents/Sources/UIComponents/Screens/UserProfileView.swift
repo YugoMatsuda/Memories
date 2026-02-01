@@ -42,6 +42,7 @@ public struct UserProfileView: View {
             }
         }
         .navigationTitle("Profile")
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 if viewModel.isSaving {
