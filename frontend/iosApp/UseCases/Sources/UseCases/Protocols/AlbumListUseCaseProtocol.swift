@@ -41,6 +41,8 @@ public protocol AlbumListUseCaseProtocol: Sendable {
     func observeUser() -> AnyPublisher<User, Never>
     func observeAlbumChange() -> AnyPublisher<LocalAlbumChangeEvent, Never>
     func observeSync() -> AnyPublisher<SyncQueueState, Never>
+    func observeOnlineState() -> AnyPublisher<Bool, Never>
     func display() async -> AlbumListUseCaseModel.DisplayResult
     func next(page: Int) async -> AlbumListUseCaseModel.NextResult
+    func toggleOnlineState()
 }

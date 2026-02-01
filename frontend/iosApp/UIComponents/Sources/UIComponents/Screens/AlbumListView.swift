@@ -16,13 +16,16 @@ public struct AlbumListView: View {
             VStack {
                 Spacer()
                 HStack {
+                    if viewModel.isNetworkDebugMode {
+                        networkToggleButton
+                    }
                     Spacer()
                     fabButton
                 }
             }
             .padding()
         }
-        .navigationTitle("Memories")
+        .navigationTitle(viewModel.isNetworkDebugMode ? "Memories (Network Debug Mode)" : "Memories")
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 syncButton
@@ -184,6 +187,21 @@ public struct AlbumListView: View {
                     }
                 }
             }
+        }
+    }
+
+    private var networkToggleButton: some View {
+        Button {
+            viewModel.toggleOnlineState()
+        } label: {
+            Image(systemName: viewModel.isOnline ? "wifi" : "wifi.slash")
+                .font(.title2)
+                .fontWeight(.semibold)
+                .foregroundStyle(.white)
+                .frame(width: 56, height: 56)
+                .background(viewModel.isOnline ? Color.green : Color.red)
+                .clipShape(Circle())
+                .shadow(radius: 4, y: 2)
         }
     }
 }

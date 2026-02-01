@@ -37,6 +37,17 @@ public final class AlbumListUseCase: AlbumListUseCaseProtocol, @unchecked Sendab
         .eraseToAnyPublisher()
     }
 
+    public func observeOnlineState() -> AnyPublisher<Bool, Never> {
+        reachabilityRepository.isConnectedPublisher
+    }
+
+    public func toggleOnlineState() {
+        guard let debugRepository = reachabilityRepository as? DebugReachabilityRepository else {
+            fatalError("toggleOnlineState can only be called with DebugReachabilityRepository")
+        }
+        debugRepository.setOnline(!debugRepository.isConnected)
+    }
+
     public init(
         userRepository: UserRepositoryProtocol,
         albumRepository: AlbumRepositoryProtocol,

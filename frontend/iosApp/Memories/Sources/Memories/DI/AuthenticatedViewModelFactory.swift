@@ -33,9 +33,17 @@ public final class AuthenticatedViewModelFactory {
     }
 
     public func makeAlbumListViewModel() -> AlbumListViewModel {
-        AlbumListViewModel(
+        let isNetworkDebugMode: Bool
+        switch AppConfig.onlineState {
+        case .debug:
+            isNetworkDebugMode = true
+        case .production:
+            isNetworkDebugMode = false
+        }
+        return AlbumListViewModel(
             albumListUseCase: container.albumListUseCase,
-            router: container.router
+            router: container.router,
+            isNetworkDebugMode: isNetworkDebugMode
         )
     }
 

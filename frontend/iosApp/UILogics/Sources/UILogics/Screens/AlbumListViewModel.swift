@@ -10,6 +10,9 @@ public final class AlbumListViewModel: ObservableObject {
     @Published public private(set) var userIcon: UserIconUIModel?
     @Published public private(set) var displayResult: DisplayResult = .loading
     @Published public private(set) var syncState: SyncQueueState = SyncQueueState(pendingCount: 0, isSyncing: false)
+    @Published public private(set) var isOnline: Bool = true
+
+    public let isNetworkDebugMode: Bool
 
     private let albumListUseCase: AlbumListUseCaseProtocol
     private let router: AuthenticatedRouterProtocol
@@ -19,10 +22,12 @@ public final class AlbumListViewModel: ObservableObject {
 
     public init(
         albumListUseCase: AlbumListUseCaseProtocol,
-        router: AuthenticatedRouterProtocol
+        router: AuthenticatedRouterProtocol,
+        isNetworkDebugMode: Bool
     ) {
         self.albumListUseCase = albumListUseCase
         self.router = router
+        self.isNetworkDebugMode = isNetworkDebugMode
 
         albumListUseCase.observeUser()
             .receive(on: DispatchQueue.main)
@@ -50,6 +55,17 @@ public final class AlbumListViewModel: ObservableObject {
                 self?.syncState = state
             }
             .store(in: &cancellables)
+
+        albumListUseCase.observeOnlineState()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isOnline in
+                self?.isOnline = isOnline
+            }
+            .store(in: &cancellables)
+    }
+
+    public func toggleOnlineState() {
+        albumListUseCase.toggleOnlineState()
     }
 
     private func handleLocalChange(_ event: LocalAlbumChangeEvent) {
