@@ -72,10 +72,20 @@ public final class UserProfileViewModel: ObservableObject {
             uiModel.avatarUrl = updatedUser.displayAvatar
             pendingAvatarImage = nil
             selectedImage = nil
+            alertItem = AlertItem(
+                title: "Saved",
+                message: "Your profile has been updated.",
+                buttons: [Alert.Button.default(Text("OK"))]
+            )
         case .successPendingSync(let updatedUser):
             uiModel.avatarUrl = updatedUser.displayAvatar
             pendingAvatarImage = nil
             selectedImage = nil
+            alertItem = AlertItem(
+                title: "Saved",
+                message: "Your profile has been saved locally and will sync when online.",
+                buttons: [Alert.Button.default(Text("OK"))]
+            )
         case .failure(let error):
             showAlert(for: error)
         }
