@@ -160,7 +160,7 @@ public final class AlbumListViewModel: ObservableObject {
                 coverImageUrl: album.displayCoverImage,
                 syncStatus: album.syncStatus,
                 didTap: { [weak self] in
-                    self?.router.push(.albumDetail(album))
+                    self?.router.push(.albumDetail(.albumList(album)))
                 }
             )
         }

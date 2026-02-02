@@ -7,9 +7,11 @@ import UseCases
 @MainActor
 public final class AuthenticatedViewModelFactory {
     let container: AuthenticatedContainer
+    let router: AuthenticatedRouterProtocol
 
-    public init(container: AuthenticatedContainer) {
+    public init(container: AuthenticatedContainer, router: AuthenticatedRouterProtocol) {
         self.container = container
+        self.router = router
     }
 
     public func makeSplashViewModel(
@@ -42,25 +44,25 @@ public final class AuthenticatedViewModelFactory {
         }
         return AlbumListViewModel(
             albumListUseCase: container.albumListUseCase,
-            router: container.router,
+            router: router,
             isNetworkDebugMode: isNetworkDebugMode
         )
     }
 
     public func makeAlbumFormViewModel(mode: AlbumFormMode) -> AlbumFormViewModel {
-        AlbumFormViewModel(mode: mode, useCase: container.albumFormUseCase, router: container.router)
+        AlbumFormViewModel(mode: mode, useCase: container.albumFormUseCase, router: router)
     }
 
     public func makeUserProfileViewModel(user: User) -> UserProfileViewModel {
         UserProfileViewModel(user: user, useCase: container.userProfileUseCase)
     }
 
-    public func makeAlbumDetailViewModel(album: Album) -> AlbumDetailViewModel {
-        AlbumDetailViewModel(album: album, albumDetailUseCase: container.albumDetailUseCase, router: container.router)
+    public func makeAlbumDetailViewModel(origin: AlbumDetailOrigin) -> AlbumDetailViewModel {
+        AlbumDetailViewModel(origin: origin, albumDetailUseCase: container.albumDetailUseCase, router: router)
     }
 
     public func makeMemoryFormViewModel(album: Album) -> MemoryFormViewModel {
-        MemoryFormViewModel(album: album, useCase: container.memoryFormUseCase, router: container.router)
+        MemoryFormViewModel(album: album, useCase: container.memoryFormUseCase, router: router)
     }
 
     public func makeSyncQueuesViewModel() -> SyncQueuesViewModel {

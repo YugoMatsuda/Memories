@@ -35,11 +35,23 @@ public enum AlbumDetailUseCaseModel {
             case unknown
         }
     }
+
+    public enum ResolveAlbumResult: Sendable {
+        case success(Album)
+        case failure(Error)
+
+        public enum Error: Sendable, Equatable {
+            case notFound
+            case networkError
+            case offlineUnavailable
+        }
+    }
 }
 
 public protocol AlbumDetailUseCaseProtocol: Sendable {
     func display(album: Album) async -> AlbumDetailUseCaseModel.DisplayResult
     func next(album: Album, page: Int) async -> AlbumDetailUseCaseModel.NextResult
+    func resolveAlbum(serverId: Int) async -> AlbumDetailUseCaseModel.ResolveAlbumResult
     var localChangePublisher: AnyPublisher<LocalMemoryChangeEvent, Never> { get }
     var observeAlbumUpdate: AnyPublisher<LocalAlbumChangeEvent, Never> { get }
 }

@@ -23,4 +23,16 @@ public struct RootUseCase: RootUseCaseProtocol, Sendable {
         }
         return .loggedIn(session: session)
     }
+
+    public func handleDeepLink(url: URL) -> RootUseCaseModel.HandleDeepLinkResult {
+        guard let deepLink = DeepLink.parse(url: url) else {
+            return .invalidURL
+        }
+
+        guard authSessionRepository.restore() != nil else {
+            return .notAuthenticated(deepLink)
+        }
+
+        return .authenticated(deepLink)
+    }
 }

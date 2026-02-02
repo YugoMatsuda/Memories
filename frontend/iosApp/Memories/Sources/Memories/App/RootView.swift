@@ -1,5 +1,7 @@
 import SwiftUI
+import Combine
 import UIComponents
+import UseCases
 
 public struct RootView: View {
     @ObservedObject var viewModel: RootViewModel
@@ -26,6 +28,8 @@ public struct RootView: View {
                     token: token,
                     userId: userId,
                     hasPreviousSession: hasPreviousSession,
+                    pendingDeepLink: viewModel.consumePendingDeepLink(),
+                    deepLinkPublisher: viewModel.deepLinkSubject.eraseToAnyPublisher(),
                     onReLogin: { newToken, newUserId in
                         viewModel.didLogin(token: newToken, userId: newUserId)
                     }
@@ -34,6 +38,13 @@ public struct RootView: View {
         }
         .animation(.default, value: viewModel.state)
         .transition(.opacity)
+        .alert(item: $viewModel.alertItem) { item in
+            Alert(
+                title: Text(item.title),
+                message: Text(item.message),
+                dismissButton: item.buttons.first
+            )
+        }
     }
 }
 
@@ -59,16 +70,27 @@ struct AuthenticatedRootView: View {
     @StateObject private var coordinator: AuthenticatedCoordinator
     @StateObject private var router: AuthenticatedRouter
 
-    init(token: String, userId: Int, hasPreviousSession: Bool, onReLogin: @escaping (String, Int) -> Void) {
+    init(
+        token: String,
+        userId: Int,
+        hasPreviousSession: Bool,
+        pendingDeepLink: DeepLink?,
+        deepLinkPublisher: AnyPublisher<DeepLink, Never>,
+        onReLogin: @escaping (String, Int) -> Void
+    ) {
         let container = AuthenticatedContainer(token: token, userId: userId)
-        let factory = AuthenticatedViewModelFactory(container: container)
+        let router = AuthenticatedRouter(
+            pendingDeepLink: pendingDeepLink,
+            deepLinkPublisher: deepLinkPublisher
+        )
+        let factory = AuthenticatedViewModelFactory(container: container, router: router)
         let coordinator = AuthenticatedCoordinator(
             factory: factory,
             hasPreviousSession: hasPreviousSession,
             onReLogin: onReLogin
         )
         _coordinator = StateObject(wrappedValue: coordinator)
-        _router = StateObject(wrappedValue: container.router)
+        _router = StateObject(wrappedValue: router)
     }
 
     var body: some View {

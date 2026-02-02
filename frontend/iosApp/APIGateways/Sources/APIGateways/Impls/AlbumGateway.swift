@@ -8,6 +8,12 @@ public struct AlbumGateway: AlbumGatewayProtocol {
         self.apiClient = apiClient
     }
 
+    public func getAlbum(id: Int) async throws -> AlbumResponse {
+        let request = GetAlbumRequest(albumId: id)
+        let data = try await apiClient.send(request)
+        return try JSONDecoder().decode(AlbumResponse.self, from: data)
+    }
+
     public func getAlbums(page: Int, pageSize: Int) async throws -> PaginatedAlbumsResponse {
         let request = GetAlbumsRequest(page: page, pageSize: pageSize)
         let data = try await apiClient.send(request)

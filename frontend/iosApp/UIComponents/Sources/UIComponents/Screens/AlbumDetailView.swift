@@ -29,7 +29,7 @@ public struct AlbumDetailView: View {
             }
             .padding()
         }
-        .navigationTitle(viewModel.album.title)
+        .navigationTitle(viewModel.album?.title ?? "")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {

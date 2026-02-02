@@ -8,6 +8,9 @@ struct iOSApp: App {
     var body: some Scene {
         WindowGroup {
             RootView(viewModel: delegate.rootViewModel)
+                .onOpenURL { url in
+                    delegate.rootViewModel.handleDeepLink(url: url)
+                }
         }
     }
 }

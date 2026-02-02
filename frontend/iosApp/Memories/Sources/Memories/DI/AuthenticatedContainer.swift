@@ -102,7 +102,6 @@ public final class AuthenticatedContainer {
         )
     }()
 
-    public let router = AuthenticatedRouter()
 
     public lazy var albumListUseCase: AlbumListUseCase = {
         AlbumListUseCase(
@@ -150,6 +149,7 @@ public final class AuthenticatedContainer {
         AlbumDetailUseCase(
             memoryRepository: memoryRepository,
             albumRepository: albumRepository,
+            albumGateway: albumGateway,
             memoryGateway: memoryGateway,
             reachabilityRepository: reachabilityRepository
         )

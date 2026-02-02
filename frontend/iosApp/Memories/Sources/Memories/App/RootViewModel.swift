@@ -2,6 +2,7 @@ import Foundation
 import SwiftUI
 import Combine
 import UseCases
+import UILogics
 
 public enum RootViewState: Equatable {
     case launching
@@ -12,6 +13,11 @@ public enum RootViewState: Equatable {
 @MainActor
 public final class RootViewModel: ObservableObject {
     @Published public private(set) var state: RootViewState = .launching
+    @Published public var alertItem: AlertItem?
+
+    // DeepLink
+    private(set) var pendingDeepLink: DeepLink?
+    public let deepLinkSubject = PassthroughSubject<DeepLink, Never>()
 
     private let rootUseCase: RootUseCaseProtocol
     private var cancellables = Set<AnyCancellable>()
@@ -41,7 +47,43 @@ public final class RootViewModel: ObservableObject {
         state = .authenticated(token: token, userId: userId, hasPreviousSession: false)
     }
 
+    public func handleDeepLink(url: URL) {
+        let result = rootUseCase.handleDeepLink(url: url)
+
+        switch result {
+        case .authenticated(let deepLink):
+            if case .authenticated = state {
+                // Warm Start: Routerが既に存在
+                deepLinkSubject.send(deepLink)
+            } else {
+                // Cold Start: Container生成待ち
+                pendingDeepLink = deepLink
+            }
+
+        case .notAuthenticated(let deepLink):
+            pendingDeepLink = deepLink
+            alertItem = AlertItem(
+                title: "Login Required",
+                message: "Please log in to view this content.",
+                buttons: [.default(Text("OK"))]
+            )
+
+        case .invalidURL:
+            alertItem = AlertItem(
+                title: "Invalid Link",
+                message: "This link cannot be opened.",
+                buttons: [.default(Text("OK"))]
+            )
+        }
+    }
+
+    public func consumePendingDeepLink() -> DeepLink? {
+        defer { pendingDeepLink = nil }
+        return pendingDeepLink
+    }
+
     private func handleLogout() {
         state = .unauthenticated
+        pendingDeepLink = nil
     }
 }

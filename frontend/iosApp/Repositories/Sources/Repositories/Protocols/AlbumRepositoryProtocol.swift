@@ -11,6 +11,7 @@ public protocol AlbumRepositoryProtocol: Sendable {
     // Read
     func getAll() async -> [Album]
     func get(byLocalId localId: UUID) async -> Album?
+    func get(byServerId serverId: Int) async -> Album?
 
     // Server Sync (no event firing)
     func syncSet(_ albums: [Album]) async throws

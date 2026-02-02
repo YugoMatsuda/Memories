@@ -1,15 +1,43 @@
 import Foundation
 import SwiftUI
+import Combine
 import Domains
 import UILogics
 import UIComponents
+import UseCases
 
 @MainActor
 public final class AuthenticatedRouter: AuthenticatedRouterProtocol, ObservableObject {
     @Published public var path = NavigationPath()
     @Published public var sheetItem: AuthenticatedSheet?
 
-    public init() {}
+    private var cancellables = Set<AnyCancellable>()
+
+    public init(
+        pendingDeepLink: DeepLink?,
+        deepLinkPublisher: AnyPublisher<DeepLink, Never>
+    ) {
+        // Cold Start: process pending deep link
+        if let deepLink = pendingDeepLink {
+            handleDeepLink(deepLink)
+        }
+
+        // Warm Start: observe deep link publisher
+        deepLinkPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] deepLink in
+                self?.handleDeepLink(deepLink)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func handleDeepLink(_ deepLink: DeepLink) {
+        switch deepLink {
+        case .album(let albumId):
+            path = NavigationPath()
+            path.append(AuthenticatedRoute.albumDetail(.deepLink(id: albumId)))
+        }
+    }
 
     public func push(_ route: AuthenticatedRoute) {
         path.append(route)
@@ -96,8 +124,8 @@ public final class AuthenticatedCoordinator: ObservableObject {
         return UserProfileView(viewModel: viewModel)
     }
 
-    public func makeAlbumDetailView(album: Album) -> AlbumDetailView {
-        let viewModel = factory.makeAlbumDetailViewModel(album: album)
+    public func makeAlbumDetailView(origin: AlbumDetailOrigin) -> AlbumDetailView {
+        let viewModel = factory.makeAlbumDetailViewModel(origin: origin)
         return AlbumDetailView(viewModel: viewModel)
     }
 
@@ -121,8 +149,8 @@ public final class AuthenticatedCoordinator: ObservableObject {
         switch route {
         case .userProfile(let user):
             makeUserProfileView(user: user)
-        case .albumDetail(let album):
-            makeAlbumDetailView(album: album)
+        case .albumDetail(let origin):
+            makeAlbumDetailView(origin: origin)
         case .syncQueues:
             makeSyncQueuesView()
         }

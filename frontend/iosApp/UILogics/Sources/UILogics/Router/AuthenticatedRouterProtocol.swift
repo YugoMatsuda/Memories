@@ -3,8 +3,13 @@ import Domains
 
 public enum AuthenticatedRoute: Hashable {
     case userProfile(User)
-    case albumDetail(Album)
+    case albumDetail(AlbumDetailOrigin)
     case syncQueues
+}
+
+public enum AlbumDetailOrigin: Hashable {
+    case albumList(Album)
+    case deepLink(id: Int)
 }
 
 public enum AlbumFormMode: Equatable {

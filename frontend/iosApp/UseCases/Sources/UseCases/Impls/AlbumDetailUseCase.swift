@@ -7,6 +7,7 @@ import APIGateways
 public final class AlbumDetailUseCase: AlbumDetailUseCaseProtocol, @unchecked Sendable {
     private let memoryRepository: MemoryRepositoryProtocol
     private let albumRepository: AlbumRepositoryProtocol
+    private let albumGateway: AlbumGatewayProtocol
     private let memoryGateway: MemoryGatewayProtocol
     private let reachabilityRepository: ReachabilityRepositoryProtocol
 
@@ -21,11 +22,13 @@ public final class AlbumDetailUseCase: AlbumDetailUseCaseProtocol, @unchecked Se
     public init(
         memoryRepository: MemoryRepositoryProtocol,
         albumRepository: AlbumRepositoryProtocol,
+        albumGateway: AlbumGatewayProtocol,
         memoryGateway: MemoryGatewayProtocol,
         reachabilityRepository: ReachabilityRepositoryProtocol
     ) {
         self.memoryRepository = memoryRepository
         self.albumRepository = albumRepository
+        self.albumGateway = albumGateway
         self.memoryGateway = memoryGateway
         self.reachabilityRepository = reachabilityRepository
     }
@@ -79,6 +82,37 @@ public final class AlbumDetailUseCase: AlbumDetailUseCaseProtocol, @unchecked Se
             return .success(AlbumDetailUseCaseModel.PageInfo(memories: allMemories, hasMore: hasMore))
         } catch {
             return .failure(mapNextError(error))
+        }
+    }
+
+    public func resolveAlbum(serverId: Int) async -> AlbumDetailUseCaseModel.ResolveAlbumResult {
+        if reachabilityRepository.isConnected {
+            do {
+                let response = try await albumGateway.getAlbum(id: serverId)
+                let album = AlbumMapper.toDomain(response)
+                try? await albumRepository.syncSet([album])
+                // Return from cache to get preserved localId
+                if let cachedAlbum = await albumRepository.get(byServerId: serverId) {
+                    return .success(cachedAlbum)
+                }
+                return .success(album)
+            } catch let error as NSError {
+                if error.domain == NSURLErrorDomain {
+                    return .failure(.networkError)
+                }
+                // Check for 404
+                if let httpResponse = error.userInfo["HTTPResponse"] as? HTTPURLResponse,
+                   httpResponse.statusCode == 404 {
+                    return .failure(.notFound)
+                }
+                return .failure(.notFound)
+            }
+        } else {
+            // Offline: try cache
+            if let cachedAlbum = await albumRepository.get(byServerId: serverId) {
+                return .success(cachedAlbum)
+            }
+            return .failure(.offlineUnavailable)
         }
     }
 

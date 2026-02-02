@@ -40,6 +40,18 @@ public final class AlbumRepository: AlbumRepositoryProtocol, @unchecked Sendable
         }
     }
 
+    public func get(byServerId serverId: Int) async -> Album? {
+        let targetServerId: Int? = serverId
+        let descriptor = FetchDescriptor<LocalAlbum>(
+            predicate: #Predicate { $0.serverId == targetServerId }
+        )
+        do {
+            return try await database.fetch(descriptor).first
+        } catch {
+            return nil
+        }
+    }
+
     // MARK: - Server Sync (no event firing)
 
     public func syncSet(_ albums: [Album]) async throws {

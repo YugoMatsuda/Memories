@@ -8,21 +8,29 @@ import Utilities
 @MainActor
 public final class AlbumDetailViewModel: ObservableObject {
     @Published public private(set) var displayResult: DisplayResult = .loading
-    @Published public private(set) var album: Album
+    @Published public private(set) var album: Album?
 
     // Viewer state (nil = hidden, non-nil = showing)
     @Published public var viewerMemoryId: UUID?
 
+    private let origin: AlbumDetailOrigin
     private let albumDetailUseCase: AlbumDetailUseCaseProtocol
     private let router: AuthenticatedRouterProtocol
     private var cancellables = Set<AnyCancellable>()
 
     private var isLoadingMore = false
 
-    public init(album: Album, albumDetailUseCase: AlbumDetailUseCaseProtocol, router: AuthenticatedRouterProtocol) {
-        self.album = album
+    public init(origin: AlbumDetailOrigin, albumDetailUseCase: AlbumDetailUseCaseProtocol, router: AuthenticatedRouterProtocol) {
+        self.origin = origin
         self.albumDetailUseCase = albumDetailUseCase
         self.router = router
+
+        switch origin {
+        case .albumList(let album):
+            self.album = album
+        case .deepLink:
+            self.album = nil
+        }
 
         albumDetailUseCase.localChangePublisher
             .receive(on: DispatchQueue.main)
@@ -42,7 +50,53 @@ public final class AlbumDetailViewModel: ObservableObject {
     public func onAppear() {
         guard case .loading = displayResult else { return }
         Task {
+            switch origin {
+            case .albumList:
+                await display()
+            case .deepLink(let serverId):
+                await resolveAlbumAndDisplay(serverId: serverId)
+            }
+        }
+    }
+
+    private func resolveAlbumAndDisplay(serverId: Int) async {
+        displayResult = .loading
+
+        let result = await albumDetailUseCase.resolveAlbum(serverId: serverId)
+
+        switch result {
+        case .success(let album):
+            self.album = album
             await display()
+
+        case .failure(let error):
+            displayResult = .failure(mapResolveError(error))
+        }
+    }
+
+    private func mapResolveError(_ error: AlbumDetailUseCaseModel.ResolveAlbumResult.Error) -> ErrorUIModel {
+        switch error {
+        case .notFound:
+            return ErrorUIModel(
+                message: "Album not found.",
+                retryAction: { }
+            )
+        case .networkError:
+            return ErrorUIModel(
+                message: "Network error. Please check your connection.",
+                retryAction: { [weak self] in
+                    guard case .deepLink(let serverId) = self?.origin else { return }
+                    Task { await self?.resolveAlbumAndDisplay(serverId: serverId) }
+                }
+            )
+        case .offlineUnavailable:
+            return ErrorUIModel(
+                message: "This album is not available offline.",
+                retryAction: { [weak self] in
+                    guard case .deepLink(let serverId) = self?.origin else { return }
+                    Task { await self?.resolveAlbumAndDisplay(serverId: serverId) }
+                }
+            )
         }
     }
 
@@ -57,14 +111,17 @@ public final class AlbumDetailViewModel: ObservableObject {
     }
 
     public func showEditAlbumForm() {
+        guard let album else { return }
         router.showSheet(.albumForm(.edit(album)))
     }
 
     public func showCreateMemoryForm() {
+        guard let album else { return }
         router.showSheet(.memoryForm(album: album))
     }
 
     private func display() async {
+        guard let album else { return }
         displayResult = .loading
         let result = await albumDetailUseCase.display(album: album)
 
@@ -77,7 +134,7 @@ public final class AlbumDetailViewModel: ObservableObject {
     }
 
     private func loadMore() async {
-        guard case .success(let currentData) = displayResult else { return }
+        guard let album, case .success(let currentData) = displayResult else { return }
 
         let previousCount = currentData.memories.count
         let nextPage = currentData.currentPage + 1
@@ -99,7 +156,7 @@ public final class AlbumDetailViewModel: ObservableObject {
     }
 
     private func handleLocalChange(_ event: LocalMemoryChangeEvent) {
-        guard case .success(let currentData) = displayResult else { return }
+        guard let album, case .success(let currentData) = displayResult else { return }
 
         switch event {
         case .created(let memory):
@@ -115,8 +172,8 @@ public final class AlbumDetailViewModel: ObservableObject {
         case .created:
             break
         case .updated(let updatedAlbum):
-            guard updatedAlbum.localId == album.localId else { return }
-            album = updatedAlbum
+            guard let album, updatedAlbum.localId == album.localId else { return }
+            self.album = updatedAlbum
         }
     }
 
