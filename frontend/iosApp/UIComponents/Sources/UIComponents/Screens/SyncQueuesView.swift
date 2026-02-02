@@ -29,11 +29,33 @@ public struct SyncQueuesView: View {
     private func operationRow(_ item: SyncQueuesViewModel.SyncOperationUIModel) -> some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text(item.entityType)
-                    .font(.headline)
-                Text(item.operationType)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                HStack(spacing: 8) {
+                    Text(item.entityType)
+                        .font(.headline)
+                    Text("• \(item.operationType)")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+
+                if let title = item.entityTitle {
+                    Text(title)
+                        .font(.subheadline)
+                        .foregroundStyle(.primary)
+                }
+
+                HStack(spacing: 12) {
+                    Label(item.localId, systemImage: "number")
+                    if let serverId = item.serverId {
+                        Label(serverId, systemImage: "server.rack")
+                    }
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+                Text(item.createdAt)
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+
                 if let errorMessage = item.errorMessage {
                     Text(errorMessage)
                         .font(.caption)

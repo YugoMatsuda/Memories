@@ -30,8 +30,8 @@ public final class SyncQueuesViewModel: ObservableObject {
     }
 
     private func loadOperations() async {
-        let operations = await useCase.getAll()
-        items = operations.map { SyncOperationUIModel(from: $0) }
+        let queueItems = await useCase.getAll()
+        items = queueItems.map { SyncOperationUIModel(from: $0) }
     }
 }
 
@@ -44,13 +44,22 @@ extension SyncQueuesViewModel {
         public let operationType: String
         public let status: Status
         public let errorMessage: String?
+        public let entityTitle: String?
+        public let localId: String
+        public let serverId: String?
+        public let createdAt: String
 
-        public init(from operation: SyncOperation) {
+        public init(from item: SyncQueueItem) {
+            let operation = item.operation
             self.id = operation.id
             self.entityType = Self.mapEntityType(operation.entityType)
             self.operationType = Self.mapOperationType(operation.operationType)
             self.status = Self.mapStatus(operation.status)
             self.errorMessage = operation.errorMessage
+            self.entityTitle = item.entityTitle
+            self.localId = operation.localId.uuidString.prefix(8).lowercased()
+            self.serverId = item.entityServerId.map { String($0) }
+            self.createdAt = Self.formatDate(operation.createdAt)
         }
 
         private static func mapEntityType(_ type: EntityType) -> String {
@@ -74,6 +83,13 @@ extension SyncQueuesViewModel {
             case .inProgress: return .inProgress
             case .failed: return .failed
             }
+        }
+
+        private static func formatDate(_ date: Date) -> String {
+            let formatter = DateFormatter()
+            formatter.dateStyle = .short
+            formatter.timeStyle = .medium
+            return formatter.string(from: date)
         }
 
         public enum Status: Equatable {

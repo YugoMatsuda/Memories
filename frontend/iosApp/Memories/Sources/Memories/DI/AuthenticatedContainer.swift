@@ -156,6 +156,11 @@ public final class AuthenticatedContainer {
     }()
 
     public lazy var syncQueuesUseCase: SyncQueuesUseCase = {
-        SyncQueuesUseCase(syncQueueRepository: syncQueueRepository)
+        SyncQueuesUseCase(
+            syncQueueRepository: syncQueueRepository,
+            albumRepository: albumRepository,
+            memoryRepository: memoryRepository,
+            userRepository: userRepository
+        )
     }()
 }
