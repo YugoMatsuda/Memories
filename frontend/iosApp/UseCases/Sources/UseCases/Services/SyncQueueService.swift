@@ -161,14 +161,15 @@ public final class SyncQueueService: SyncQueueServiceProtocol, @unchecked Sendab
             album = album.with(id: response.id, syncStatus: .synced)
         }
 
-        // 2. Upload cover image if exists locally
-        if album.coverImageLocalPath != nil, let serverId = album.id {
-            let imageData = try imageStorageRepository.get(entity: .albumCover, localId: operation.localId)
+        // 2. Upload cover image if exists locally (file must actually exist)
+        if album.coverImageLocalPath != nil,
+           let serverId = album.id,
+           let imageData = try? imageStorageRepository.get(entity: .albumCover, localId: operation.localId) {
             let response = try await albumGateway.uploadCoverImage(
                 albumId: serverId,
                 fileData: imageData,
-                fileName: "\(operation.localId).jpg",
-                mimeType: "image/jpeg"
+                fileName: MimeType.jpeg.fileName(for: operation.localId),
+                mimeType: MimeType.jpeg.rawValue
             )
             if let coverUrl = response.coverImageUrl {
                 try await albumRepository.updateCoverImageUrl(localId: operation.localId, url: coverUrl)
@@ -186,14 +187,14 @@ public final class SyncQueueService: SyncQueueServiceProtocol, @unchecked Sendab
         // 1. Update album on server
         _ = try await albumGateway.updateAlbum(albumId: serverId, title: album.title, coverImageUrl: nil)
 
-        // 2. Upload cover image if exists locally
-        if album.coverImageLocalPath != nil {
-            let imageData = try imageStorageRepository.get(entity: .albumCover, localId: operation.localId)
+        // 2. Upload cover image if exists locally (file must actually exist)
+        if album.coverImageLocalPath != nil,
+           let imageData = try? imageStorageRepository.get(entity: .albumCover, localId: operation.localId) {
             let response = try await albumGateway.uploadCoverImage(
                 albumId: serverId,
                 fileData: imageData,
-                fileName: "\(operation.localId).jpg",
-                mimeType: "image/jpeg"
+                fileName: MimeType.jpeg.fileName(for: operation.localId),
+                mimeType: MimeType.jpeg.rawValue
             )
             if let coverUrl = response.coverImageUrl {
                 try await albumRepository.updateCoverImageUrl(localId: operation.localId, url: coverUrl)
@@ -238,8 +239,8 @@ public final class SyncQueueService: SyncQueueServiceProtocol, @unchecked Sendab
             title: memory.title,
             imageRemoteUrl: nil,
             fileData: imageData,
-            fileName: "\(operation.localId).jpg",
-            mimeType: "image/jpeg"
+            fileName: MimeType.jpeg.fileName(for: operation.localId),
+            mimeType: MimeType.jpeg.rawValue
         )
 
         // Delete local image
@@ -267,8 +268,8 @@ public final class SyncQueueService: SyncQueueServiceProtocol, @unchecked Sendab
             let imageData = try imageStorageRepository.get(entity: .avatar, localId: operation.localId)
             response = try await userGateway.uploadAvatar(
                 fileData: imageData,
-                fileName: "\(operation.localId).jpg",
-                mimeType: "image/jpeg"
+                fileName: MimeType.jpeg.fileName(for: operation.localId),
+                mimeType: MimeType.jpeg.rawValue
             )
             imageStorageRepository.delete(entity: .avatar, localId: operation.localId)
         }

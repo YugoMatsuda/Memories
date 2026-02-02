@@ -133,16 +133,22 @@ public final class AlbumListViewModel: ObservableObject {
     private func loadMore() async {
         guard case .success(let currentData) = displayResult else { return }
 
+        let previousCount = currentData.albums.count
         let nextPage = currentData.currentPage + 1
         let result = await albumListUseCase.next(page: nextPage)
-        isLoadingMore = false
 
         switch result {
         case .success(let pageInfo):
-            // pageInfo.albums already contains all albums from repository
             displayResult = .success(makeListData(albums: pageInfo.albums, currentPage: nextPage, hasMore: pageInfo.hasMore))
+
+            // If data didn't increase but hasMore is true, fetch next page automatically
+            if pageInfo.albums.count == previousCount && pageInfo.hasMore {
+                await loadMore()
+            } else {
+                isLoadingMore = false
+            }
         case .failure:
-            break
+            isLoadingMore = false
         }
     }
 

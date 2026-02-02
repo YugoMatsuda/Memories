@@ -78,8 +78,8 @@ public struct MemoryFormUseCase: MemoryFormUseCaseProtocol, Sendable {
                 title: memory.title,
                 imageRemoteUrl: nil,
                 fileData: imageData,
-                fileName: "\(memory.localId).jpg",
-                mimeType: "image/jpeg"
+                fileName: MimeType.jpeg.fileName(for: memory.localId),
+                mimeType: MimeType.jpeg.rawValue
             )
 
             // Delete local image

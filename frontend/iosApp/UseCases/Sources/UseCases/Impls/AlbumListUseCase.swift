@@ -65,18 +65,15 @@ public final class AlbumListUseCase: AlbumListUseCaseProtocol, @unchecked Sendab
     }
 
     public func display() async -> AlbumListUseCaseModel.DisplayResult {
-        print("[AlbumListUseCase] display")
         if reachabilityRepository.isConnected {
             do {
                 let response = try await albumGateway.getAlbums(page: 1, pageSize: Const.pageSize)
                 let albums = response.items.map { AlbumMapper.toDomain($0) }
-                do {
-                    try await albumRepository.syncSet(albums)
-                } catch {
-                    print("[AlbumListUseCase] Failed to sync albums to cache: \(error)")
-                }
+                try? await albumRepository.syncSet(albums)
+                // Return albums from cache to get preserved localIds
+                let cachedAlbums = await albumRepository.getAll()
                 let hasMore = response.page * response.pageSize < response.total
-                return .success(AlbumListUseCaseModel.PageInfo(albums: albums, hasMore: hasMore))
+                return .success(AlbumListUseCaseModel.PageInfo(albums: cachedAlbums, hasMore: hasMore))
             } catch {
                 // Fallback to cache on error
                 let cached = await albumRepository.getAll()
@@ -96,7 +93,6 @@ public final class AlbumListUseCase: AlbumListUseCaseProtocol, @unchecked Sendab
     }
 
     public func next(page: Int) async -> AlbumListUseCaseModel.NextResult {
-        print("[AlbumListUseCase] next page: \(page)")
         // Pagination requires online
         guard reachabilityRepository.isConnected else {
             return .failure(.offline)
@@ -105,11 +101,7 @@ public final class AlbumListUseCase: AlbumListUseCaseProtocol, @unchecked Sendab
         do {
             let response = try await albumGateway.getAlbums(page: page, pageSize: Const.pageSize)
             let albums = response.items.map { AlbumMapper.toDomain($0) }
-            do {
-                try await albumRepository.syncAppend(albums)
-            } catch {
-                print("[AlbumListUseCase] Failed to append albums to cache: \(error)")
-            }
+            try? await albumRepository.syncAppend(albums)
             let allAlbums = await albumRepository.getAll()
             let hasMore = response.page * response.pageSize < response.total
             return .success(AlbumListUseCaseModel.PageInfo(albums: allAlbums, hasMore: hasMore))

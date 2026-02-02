@@ -45,17 +45,34 @@ public final class MemoryRepository: MemoryRepositoryProtocol, @unchecked Sendab
     // MARK: - Server Sync (no event firing)
 
     public func syncSet(_ memories: [Memory], albumLocalId: UUID) async throws {
-        let targetAlbumLocalId = albumLocalId
-        // Delete only synced items for this album, preserve pending ones
-        try await database.delete(
-            where: #Predicate<LocalMemory> {
-                $0.albumLocalId == targetAlbumLocalId && $0.syncStatusRaw == "synced"
-            }
-        )
+        // Get existing memories to preserve localIds
+        let existingMemories = await getAll(albumLocalId: albumLocalId)
+        let existingByServerId = Dictionary(uniqueKeysWithValues: existingMemories.compactMap { memory -> (Int, Memory)? in
+            guard let serverId = memory.serverId else { return nil }
+            return (serverId, memory)
+        })
+
         for memory in memories {
-            let targetLocalId = memory.localId
+            // Preserve existing localId if memory exists (lookup by serverId)
+            var memoryToSave = memory
+            if let serverId = memory.serverId, let existing = existingByServerId[serverId] {
+                memoryToSave = Memory(
+                    serverId: memory.serverId,
+                    localId: existing.localId,
+                    albumId: memory.albumId,
+                    albumLocalId: memory.albumLocalId,
+                    title: memory.title,
+                    imageUrl: memory.imageUrl,
+                    imageLocalPath: memory.imageLocalPath,
+                    createdAt: memory.createdAt,
+                    syncStatus: memory.syncStatus
+                )
+            }
+
+            // Upsert by localId
+            let targetLocalId = memoryToSave.localId
             try await database.upsert(
-                memory,
+                memoryToSave,
                 as: LocalMemory.self,
                 predicate: #Predicate { $0.localId == targetLocalId }
             )
@@ -63,13 +80,51 @@ public final class MemoryRepository: MemoryRepositoryProtocol, @unchecked Sendab
     }
 
     public func syncAppend(_ memories: [Memory]) async throws {
+        // Get all existing memories to preserve localIds
+        var existingByServerId: [Int: Memory] = [:]
         for memory in memories {
-            let targetLocalId = memory.localId
+            if let existing = await getByServerId(memory.serverId), let serverId = memory.serverId {
+                existingByServerId[serverId] = existing
+            }
+        }
+
+        for memory in memories {
+            // Preserve existing localId if memory exists (lookup by serverId)
+            var memoryToSave = memory
+            if let serverId = memory.serverId, let existing = existingByServerId[serverId] {
+                memoryToSave = Memory(
+                    serverId: memory.serverId,
+                    localId: existing.localId,
+                    albumId: memory.albumId,
+                    albumLocalId: memory.albumLocalId,
+                    title: memory.title,
+                    imageUrl: memory.imageUrl,
+                    imageLocalPath: memory.imageLocalPath,
+                    createdAt: memory.createdAt,
+                    syncStatus: memory.syncStatus
+                )
+            }
+
+            // Upsert by localId
+            let targetLocalId = memoryToSave.localId
             try await database.upsert(
-                memory,
+                memoryToSave,
                 as: LocalMemory.self,
                 predicate: #Predicate { $0.localId == targetLocalId }
             )
+        }
+    }
+
+    private func getByServerId(_ serverId: Int?) async -> Memory? {
+        guard let serverId = serverId else { return nil }
+        let targetServerId: Int? = serverId
+        let descriptor = FetchDescriptor<LocalMemory>(
+            predicate: #Predicate { $0.serverId == targetServerId }
+        )
+        do {
+            return try await database.fetch(descriptor).first
+        } catch {
+            return nil
         }
     }
 

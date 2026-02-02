@@ -93,6 +93,9 @@ public struct AlbumListView: View {
                         ProgressView()
                             .frame(maxWidth: .infinity)
                             .padding()
+                            .onAppear {
+                                viewModel.onLoadMore()
+                            }
                     }
                 }
             }

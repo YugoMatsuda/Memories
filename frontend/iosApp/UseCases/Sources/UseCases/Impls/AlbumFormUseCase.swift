@@ -120,8 +120,8 @@ public struct AlbumFormUseCase: AlbumFormUseCaseProtocol, Sendable {
                 response = try await albumGateway.uploadCoverImage(
                     albumId: response.id,
                     fileData: imageData,
-                    fileName: "\(album.localId).jpg",
-                    mimeType: "image/jpeg"
+                    fileName: MimeType.jpeg.fileName(for: album.localId),
+                    mimeType: MimeType.jpeg.rawValue
                 )
                 // Delete local image
                 imageStorageRepository.delete(entity: .albumCover, localId: album.localId)
@@ -154,8 +154,8 @@ public struct AlbumFormUseCase: AlbumFormUseCaseProtocol, Sendable {
                 response = try await albumGateway.uploadCoverImage(
                     albumId: serverId,
                     fileData: imageData,
-                    fileName: "\(album.localId).jpg",
-                    mimeType: "image/jpeg"
+                    fileName: MimeType.jpeg.fileName(for: album.localId),
+                    mimeType: MimeType.jpeg.rawValue
                 )
                 // Delete local image
                 imageStorageRepository.delete(entity: .albumCover, localId: album.localId)

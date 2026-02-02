@@ -96,6 +96,9 @@ public struct AlbumDetailView: View {
                     ProgressView()
                         .frame(maxWidth: .infinity)
                         .padding()
+                        .onAppear {
+                            viewModel.onLoadMore()
+                        }
                 }
             }
         }
@@ -107,7 +110,10 @@ public struct AlbumDetailView: View {
         } label: {
             WebImage(url: item.displayImage)
                 .resizable()
-                .scaledToFit()
+                .scaledToFill()
+                .frame(minWidth: 0, maxWidth: .infinity)
+                .aspectRatio(2/3, contentMode: .fit)
+                .clipped()
                 .clipShape(RoundedRectangle(cornerRadius: 8))
         }
         .buttonStyle(.plain)

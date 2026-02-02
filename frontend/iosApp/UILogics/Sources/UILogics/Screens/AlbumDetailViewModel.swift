@@ -79,15 +79,22 @@ public final class AlbumDetailViewModel: ObservableObject {
     private func loadMore() async {
         guard case .success(let currentData) = displayResult else { return }
 
+        let previousCount = currentData.memories.count
         let nextPage = currentData.currentPage + 1
         let result = await albumDetailUseCase.next(album: album, page: nextPage)
-        isLoadingMore = false
 
         switch result {
         case .success(let pageInfo):
             displayResult = .success(makeListData(memories: pageInfo.memories, currentPage: nextPage, hasMore: pageInfo.hasMore))
+
+            // If data didn't increase but hasMore is true, fetch next page automatically
+            if pageInfo.memories.count == previousCount && pageInfo.hasMore {
+                await loadMore()
+            } else {
+                isLoadingMore = false
+            }
         case .failure:
-            break
+            isLoadingMore = false
         }
     }
 

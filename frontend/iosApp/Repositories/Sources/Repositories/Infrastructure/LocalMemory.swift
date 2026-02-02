@@ -37,6 +37,7 @@ public final class LocalMemory: DomainConvertible {
     public func update(from entity: Memory) {
         self.serverId = entity.serverId
         self.albumId = entity.albumId
+        self.albumLocalId = entity.albumLocalId
         self.title = entity.title
         self.imageUrl = entity.imageUrl?.absoluteString
         self.imageLocalPath = entity.imageLocalPath

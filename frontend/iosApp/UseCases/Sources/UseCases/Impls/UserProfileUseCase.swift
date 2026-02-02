@@ -90,8 +90,8 @@ public struct UserProfileUseCase: UserProfileUseCaseProtocol, Sendable {
             if let imageData = avatarData {
                 response = try await userGateway.uploadAvatar(
                     fileData: imageData,
-                    fileName: "\(operationLocalId).jpg",
-                    mimeType: "image/jpeg"
+                    fileName: MimeType.jpeg.fileName(for: operationLocalId),
+                    mimeType: MimeType.jpeg.rawValue
                 )
                 // Delete local image
                 imageStorageRepository.delete(entity: .avatar, localId: operationLocalId)

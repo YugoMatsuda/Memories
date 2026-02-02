@@ -31,7 +31,6 @@ public final class AlbumDetailUseCase: AlbumDetailUseCaseProtocol, @unchecked Se
     }
 
     public func display(album: Album) async -> AlbumDetailUseCaseModel.DisplayResult {
-        print("[AlbumDetailUseCase] display albumLocalId: \(album.localId)")
         // If album is not synced yet, only show local memories
         guard let albumServerId = album.id else {
             let cached = await memoryRepository.getAll(albumLocalId: album.localId)
@@ -42,11 +41,7 @@ public final class AlbumDetailUseCase: AlbumDetailUseCaseProtocol, @unchecked Se
             do {
                 let response = try await memoryGateway.getMemories(albumId: albumServerId, page: 1, pageSize: Const.pageSize)
                 let memories = response.items.compactMap { MemoryMapper.toDomain($0, albumLocalId: album.localId) }
-                do {
-                    try await memoryRepository.syncSet(memories, albumLocalId: album.localId)
-                } catch {
-                    print("[AlbumDetailUseCase] Failed to sync memories to cache: \(error)")
-                }
+                try? await memoryRepository.syncSet(memories, albumLocalId: album.localId)
                 let allMemories = await memoryRepository.getAll(albumLocalId: album.localId)
                 let hasMore = response.page * response.pageSize < response.total
                 return .success(AlbumDetailUseCaseModel.PageInfo(memories: allMemories, hasMore: hasMore))
@@ -59,17 +54,13 @@ public final class AlbumDetailUseCase: AlbumDetailUseCaseProtocol, @unchecked Se
                 return .failure(mapDisplayError(error))
             }
         } else {
-            // Offline: get from cache
+            // Offline: get from cache (empty is valid - album may have no memories yet)
             let cached = await memoryRepository.getAll(albumLocalId: album.localId)
-            if cached.isEmpty {
-                return .failure(.offline)
-            }
             return .success(AlbumDetailUseCaseModel.PageInfo(memories: cached, hasMore: false))
         }
     }
 
     public func next(album: Album, page: Int) async -> AlbumDetailUseCaseModel.NextResult {
-        print("[AlbumDetailUseCase] next albumLocalId: \(album.localId), page: \(page)")
         // Pagination requires online and synced album
         guard reachabilityRepository.isConnected else {
             return .failure(.offline)
@@ -82,11 +73,7 @@ public final class AlbumDetailUseCase: AlbumDetailUseCaseProtocol, @unchecked Se
         do {
             let response = try await memoryGateway.getMemories(albumId: albumServerId, page: page, pageSize: Const.pageSize)
             let memories = response.items.compactMap { MemoryMapper.toDomain($0, albumLocalId: album.localId) }
-            do {
-                try await memoryRepository.syncAppend(memories)
-            } catch {
-                print("[AlbumDetailUseCase] Failed to append memories to cache: \(error)")
-            }
+            try? await memoryRepository.syncAppend(memories)
             let allMemories = await memoryRepository.getAll(albumLocalId: album.localId)
             let hasMore = response.page * response.pageSize < response.total
             return .success(AlbumDetailUseCaseModel.PageInfo(memories: allMemories, hasMore: hasMore))
