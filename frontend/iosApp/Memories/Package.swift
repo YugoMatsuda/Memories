@@ -11,7 +11,6 @@ let package = Package(
     dependencies: [
         .package(path: "../Utilities"),
         .package(path: "../Domains"),
-        .package(path: "../APIClients"),
         .package(path: "../APIGateways"),
         .package(path: "../Repositories"),
         .package(path: "../UseCases"),
@@ -24,7 +23,6 @@ let package = Package(
             dependencies: [
                 "Utilities",
                 "Domains",
-                "APIClients",
                 "APIGateways",
                 "Repositories",
                 "UseCases",
