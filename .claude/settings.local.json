@@ -20,7 +20,9 @@
       "Bash(grep:*)",
       "Bash(tree:*)",
       "Bash(./gradlew:*)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:dev.to)",
+      "Bash(pkill:*)"
     ]
   }
 }

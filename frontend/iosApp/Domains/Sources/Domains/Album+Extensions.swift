@@ -1,5 +1,6 @@
 import Foundation
 import Shared
+import Utilities
 
 // Type alias for KMP Album
 public typealias Album = Shared.Album
@@ -37,9 +38,10 @@ extension Shared.Album {
     }
 
     /// Display cover image as Swift URL (for UI)
+    /// Resolves relative URLs using ImageURLResolver.baseURL
     public var displayCoverImageURL: URL? {
-        if let remote = coverImageUrl { return URL(string: remote) }
-        if let local = coverImageLocalPath { return URL(fileURLWithPath: local) }
+        if let remote = coverImageUrl { return ImageURLResolver.resolve(remote) }
+        if let local = coverImageLocalPath { return ImageURLResolver.resolveLocalPath(local) }
         return nil
     }
 

@@ -1,5 +1,6 @@
 import Foundation
 import Shared
+import Utilities
 
 // Type alias for KMP Memory
 public typealias Memory = Shared.Memory
@@ -47,9 +48,10 @@ extension Shared.Memory {
     }
 
     /// Display image as Swift URL (for UI)
+    /// Resolves relative URLs using ImageURLResolver.baseURL
     public var displayImageURL: URL? {
-        if let remote = imageUrl { return URL(string: remote) }
-        if let local = imageLocalPath { return URL(fileURLWithPath: local) }
+        if let remote = imageUrl { return ImageURLResolver.resolve(remote) }
+        if let local = imageLocalPath { return ImageURLResolver.resolveLocalPath(local) }
         return nil
     }
 

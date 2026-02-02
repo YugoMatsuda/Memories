@@ -1,5 +1,6 @@
 import Foundation
 import Shared
+import Utilities
 
 // Type alias for KMP User
 public typealias User = Shared.User
@@ -48,9 +49,10 @@ extension Shared.User {
     }
 
     /// Display avatar as Swift URL (for UI)
+    /// Resolves relative URLs using ImageURLResolver.baseURL
     public var displayAvatarURL: URL? {
-        if let remote = avatarUrl { return URL(string: remote) }
-        if let local = avatarLocalPath { return URL(fileURLWithPath: local) }
+        if let remote = avatarUrl { return ImageURLResolver.resolve(remote) }
+        if let local = avatarLocalPath { return ImageURLResolver.resolveLocalPath(local) }
         return nil
     }
 

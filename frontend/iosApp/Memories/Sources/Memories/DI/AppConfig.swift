@@ -1,6 +1,7 @@
 import Foundation
 import Repositories
 import UseCases
+import Utilities
 @preconcurrency import Shared
 
 public enum OnlineState: Sendable {
@@ -9,7 +10,12 @@ public enum OnlineState: Sendable {
 }
 
 public enum AppConfig {
-    public static let baseURL = URL(string: "http://localhost:8000")!
+    public static let baseURL: URL = {
+        let url = URL(string: "http://localhost:8000")!
+        ImageURLResolver.baseURL = url
+        return url
+    }()
+
     // .debug(initialState: true)  - Debug mode, starts online
     // .debug(initialState: false) - Debug mode, starts offline
     // .production                 - Production mode, uses actual network state
