@@ -31,9 +31,21 @@ public enum AppConfig {
     public static let authGateway: AuthGatewayProtocol = AuthGatewayAdapter(kmpGateway: kmpAuthGateway)
     public static let authSessionRepository = AuthSessionRepository()
 
-    public static let rootUseCase = RootUseCase(authSessionRepository: authSessionRepository)
-    public static let loginUseCase = LoginUseCase(
-        authGateway: authGateway,
-        authSessionRepository: authSessionRepository
-    )
+    // KMP AuthSessionRepository Bridge
+    private static let authSessionRepositoryBridge = AuthSessionRepositoryBridgeImpl(repository: authSessionRepository)
+    private static let kmpAuthSessionRepository = Shared.AuthSessionRepositoryImpl(bridge: authSessionRepositoryBridge)
+
+    // KMP UseCases
+    public static let rootUseCase: RootUseCaseProtocol = {
+        let kmpUseCase = Shared.RootUseCaseImpl(authSessionRepository: kmpAuthSessionRepository)
+        return RootUseCaseAdapter(kmpUseCase: kmpUseCase)
+    }()
+
+    public static let loginUseCase: LoginUseCaseProtocol = {
+        let kmpUseCase = Shared.LoginUseCaseImpl(
+            authGateway: kmpAuthGateway,
+            authSessionRepository: kmpAuthSessionRepository
+        )
+        return LoginUseCaseAdapter(kmpUseCase: kmpUseCase)
+    }()
 }
