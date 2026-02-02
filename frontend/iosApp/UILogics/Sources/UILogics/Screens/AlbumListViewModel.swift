@@ -34,7 +34,7 @@ public final class AlbumListViewModel: ObservableObject {
             .sink { [weak self] user in
                 guard let self else { return }
                 self.userIcon = UserIconUIModel(
-                    avatarUrl: user.displayAvatar,
+                    avatarUrl: user.displayAvatarURL,
                     didTap: { [weak self] in
                         self?.router.push(.userProfile(user))
                     }
@@ -155,9 +155,9 @@ public final class AlbumListViewModel: ObservableObject {
     private func makeListData(albums: [Album], currentPage: Int, hasMore: Bool) -> ListData {
         let items = albums.map { album in
             AlbumItemUIModel(
-                id: album.localId,
+                id: album.localIdUUID,
                 title: album.title,
-                coverImageUrl: album.displayCoverImage,
+                coverImageUrl: album.displayCoverImageURL,
                 syncStatus: album.syncStatus,
                 didTap: { [weak self] in
                     self?.router.push(.albumDetail(.albumList(album)))

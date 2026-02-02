@@ -37,7 +37,7 @@ public final class RootViewModel: ObservableObject {
         let result = rootUseCase.checkPreviousSession()
         switch result {
         case .loggedIn(let session):
-            state = .authenticated(token: session.token, userId: session.userId, hasPreviousSession: true)
+            state = .authenticated(token: session.token, userId: session.userIdInt, hasPreviousSession: true)
         case .notLoggedIn:
             state = .unauthenticated
         }

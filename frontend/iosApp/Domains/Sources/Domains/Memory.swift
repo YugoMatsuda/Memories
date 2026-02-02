@@ -1,60 +1,110 @@
 import Foundation
+import Shared
 
-public struct Memory: Sendable, Equatable, Hashable, Identifiable {
-    public var id: Int? { serverId }
-    public let serverId: Int?
-    public let localId: UUID
-    public let albumId: Int?
-    public let albumLocalId: UUID
-    public let title: String
-    public let imageUrl: URL?
-    public let imageLocalPath: String?
-    public let createdAt: Date
-    public let syncStatus: SyncStatus
+// Type alias for KMP Memory
+public typealias Memory = Shared.Memory
 
-    public init(
-        serverId: Int?,
-        localId: UUID,
-        albumId: Int?,
-        albumLocalId: UUID,
-        title: String,
-        imageUrl: URL?,
-        imageLocalPath: String?,
-        createdAt: Date,
-        syncStatus: SyncStatus = .synced
-    ) {
-        self.serverId = serverId
-        self.localId = localId
-        self.albumId = albumId
-        self.albumLocalId = albumLocalId
-        self.title = title
-        self.imageUrl = imageUrl
-        self.imageLocalPath = imageLocalPath
-        self.createdAt = createdAt
-        self.syncStatus = syncStatus
+// MARK: - Swift-friendly extensions for KMP Memory
+
+extension Shared.Memory {
+    // MARK: - Identifiable conformance
+
+    /// Server ID as optional Int
+    public var id: Int? {
+        serverId?.intValue
     }
 
-    // MARK: - Computed
+    // MARK: - Swift Type Accessors
 
-    public var displayImage: URL? {
-        if let remote = imageUrl { return remote }
+    /// LocalId as Swift UUID
+    public var localIdUUID: UUID {
+        localId.uuid
+    }
+
+    /// Album ID as optional Int
+    public var albumIdInt: Int? {
+        albumId?.intValue
+    }
+
+    /// Album LocalId as Swift UUID
+    public var albumLocalIdUUID: UUID {
+        albumLocalId.uuid
+    }
+
+    /// CreatedAt as Swift Date
+    public var createdAtDate: Date {
+        createdAt.date
+    }
+
+    /// Image URL as Swift URL
+    public var imageURL: URL? {
+        imageUrl?.url
+    }
+
+    /// Image local path as file URL
+    public var imageLocalURL: URL? {
+        imageLocalPath.map { URL(fileURLWithPath: $0) }
+    }
+
+    /// Display image as Swift URL (for UI)
+    public var displayImageURL: URL? {
+        if let remote = imageUrl { return URL(string: remote) }
         if let local = imageLocalPath { return URL(fileURLWithPath: local) }
         return nil
     }
 
-    public var isSynced: Bool { syncStatus == .synced }
+    // MARK: - Convenience Initializer
 
-    // MARK: - Copy helpers
+    /// Create Memory with Swift types
+    public static func create(
+        serverId: Int? = nil,
+        localId: UUID,
+        albumId: Int? = nil,
+        albumLocalId: UUID,
+        title: String,
+        imageUrl: URL? = nil,
+        imageLocalPath: String? = nil,
+        createdAt: Date,
+        syncStatus: Shared.SyncStatus = .synced
+    ) -> Shared.Memory {
+        Shared.Memory(
+            serverId: serverId.map { KotlinInt(int: Int32($0)) },
+            localId: Shared.LocalId.from(uuid: localId),
+            albumId: albumId.map { KotlinInt(int: Int32($0)) },
+            albumLocalId: Shared.LocalId.from(uuid: albumLocalId),
+            title: title,
+            imageUrl: imageUrl?.absoluteString,
+            imageLocalPath: imageLocalPath,
+            createdAt: Shared.Timestamp.from(date: createdAt),
+            syncStatus: syncStatus
+        )
+    }
+
+    // MARK: - Copy helpers (Swift-style)
 
     public func with(
         serverId: Int?? = nil,
         albumId: Int?? = nil,
-        syncStatus: SyncStatus? = nil
-    ) -> Memory {
-        Memory(
-            serverId: serverId ?? self.serverId,
+        syncStatus: Shared.SyncStatus? = nil
+    ) -> Shared.Memory {
+        let newServerId: KotlinInt?
+        if let serverIdOpt = serverId {
+            newServerId = serverIdOpt.map { KotlinInt(int: Int32($0)) }
+        } else {
+            newServerId = self.serverId
+        }
+
+        let newAlbumId: KotlinInt?
+        if let albumIdOpt = albumId {
+            newAlbumId = albumIdOpt.map { KotlinInt(int: Int32($0)) }
+        } else {
+            newAlbumId = self.albumId
+        }
+
+        return Shared.Memory(
+            serverId: newServerId,
             localId: self.localId,
-            albumId: albumId ?? self.albumId,
+            albumId: newAlbumId,
             albumLocalId: self.albumLocalId,
             title: self.title,
             imageUrl: self.imageUrl,
@@ -64,3 +114,8 @@ public struct Memory: Sendable, Equatable, Hashable, Identifiable {
         )
     }
 }
+
+// MARK: - Protocol Conformances
+// Note: Hashable and Equatable are inherited from Kotlin/NSObject
+
+extension Shared.Memory: @retroactive Identifiable {}

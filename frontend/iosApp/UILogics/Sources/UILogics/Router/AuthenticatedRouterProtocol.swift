@@ -31,7 +31,7 @@ public enum AuthenticatedSheet: Identifiable, Equatable {
                 return "albumForm_edit_\(album.id ?? 0)"
             }
         case .memoryForm(let album):
-            return "memoryForm_\(album.localId)"
+            return "memoryForm_\(album.localIdUUID)"
         }
     }
 }

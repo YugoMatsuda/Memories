@@ -180,13 +180,13 @@ public final class AlbumDetailViewModel: ObservableObject {
     private func makeListData(memories: [Memory], currentPage: Int, hasMore: Bool) -> ListData {
         let items = memories.map { memory in
             MemoryItemUIModel(
-                id: memory.localId,
+                id: memory.localIdUUID,
                 title: memory.title,
-                displayImage: memory.displayImage,
-                createdAt: memory.createdAt,
+                displayImage: memory.displayImageURL,
+                createdAt: memory.createdAtDate,
                 syncStatus: memory.syncStatus,
                 didTap: { [weak self] in
-                    self?.showMemoryViewer(memoryId: memory.localId)
+                    self?.showMemoryViewer(memoryId: memory.localIdUUID)
                 }
             )
         }

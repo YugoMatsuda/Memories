@@ -42,7 +42,7 @@ public final class AlbumFormViewModel: ObservableObject {
             self.coverImage = nil
         case .edit(let album):
             self.title = album.title
-            self.coverImage = album.displayCoverImage.map { .uploadedImage($0) }
+            self.coverImage = album.displayCoverImageURL.map { .uploadedImage($0) }
         }
     }
 

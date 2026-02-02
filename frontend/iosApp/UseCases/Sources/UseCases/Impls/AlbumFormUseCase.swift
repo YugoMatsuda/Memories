@@ -38,8 +38,8 @@ public struct AlbumFormUseCase: AlbumFormUseCaseProtocol, Sendable {
         }
 
         // 2. Save to local DB (Optimistic)
-        let album = Album(
-            id: nil,
+        let album = Album.create(
+            serverId: nil,
             localId: localId,
             title: title,
             coverImageUrl: nil,
@@ -55,7 +55,7 @@ public struct AlbumFormUseCase: AlbumFormUseCaseProtocol, Sendable {
 
         // 3. If offline, enqueue and return
         guard reachabilityRepository.isConnected else {
-            syncQueueService.enqueue(entityType: .album, operationType: .create, localId: album.localId)
+            syncQueueService.enqueue(entityType: .album, operationType: .create, localId: localId)
             return .successPendingSync(album)
         }
 
@@ -64,7 +64,7 @@ public struct AlbumFormUseCase: AlbumFormUseCaseProtocol, Sendable {
     }
 
     public func updateAlbum(album: Album, title: String, coverImageData: Data?) async -> AlbumFormUseCaseModel.UpdateResult {
-        let localId = album.localId
+        let localId = album.localIdUUID
 
         // 1. Save cover image locally if provided
         var localImagePath: String? = album.coverImageLocalPath
@@ -77,13 +77,13 @@ public struct AlbumFormUseCase: AlbumFormUseCaseProtocol, Sendable {
         }
 
         // 2. Update local DB (Optimistic)
-        let updatedAlbum = Album(
-            id: album.id,
+        let updatedAlbum = Album.create(
+            serverId: album.id,
             localId: localId,
             title: title,
-            coverImageUrl: album.coverImageUrl,
+            coverImageUrl: album.coverImageURL,
             coverImageLocalPath: localImagePath,
-            createdAt: album.createdAt,
+            createdAt: album.createdAtDate,
             syncStatus: .pendingUpdate
         )
         do {
@@ -120,17 +120,17 @@ public struct AlbumFormUseCase: AlbumFormUseCaseProtocol, Sendable {
                 response = try await albumGateway.uploadCoverImage(
                     albumId: response.id,
                     fileData: imageData,
-                    fileName: MimeType.jpeg.fileName(for: album.localId),
-                    mimeType: MimeType.jpeg.rawValue
+                    fileName: MimeType.jpeg.fileName(for: album.localIdUUID),
+                    mimeType: MimeType.jpeg.value
                 )
                 // Delete local image
-                imageStorageRepository.delete(entity: .albumCover, localId: album.localId)
+                imageStorageRepository.delete(entity: .albumCover, localId: album.localIdUUID)
             }
 
             // Update local DB
-            try await albumRepository.markAsSynced(localId: album.localId, serverId: response.id)
+            try await albumRepository.markAsSynced(localId: album.localIdUUID, serverId: response.id)
 
-            let syncedAlbum = AlbumMapper.toDomain(response, localId: album.localId)
+            let syncedAlbum = AlbumMapper.toDomain(response, localId: album.localIdUUID)
             return .success(syncedAlbum)
         } catch {
             // Sync failed, enqueue for later
@@ -139,7 +139,7 @@ public struct AlbumFormUseCase: AlbumFormUseCaseProtocol, Sendable {
             } catch {
                 print("[AlbumFormUseCase] Failed to update album status to failed: \(error)")
             }
-            syncQueueService.enqueue(entityType: .album, operationType: .create, localId: album.localId)
+            syncQueueService.enqueue(entityType: .album, operationType: .create, localId: album.localIdUUID)
             return .successPendingSync(album)
         }
     }
@@ -154,14 +154,14 @@ public struct AlbumFormUseCase: AlbumFormUseCaseProtocol, Sendable {
                 response = try await albumGateway.uploadCoverImage(
                     albumId: serverId,
                     fileData: imageData,
-                    fileName: MimeType.jpeg.fileName(for: album.localId),
-                    mimeType: MimeType.jpeg.rawValue
+                    fileName: MimeType.jpeg.fileName(for: album.localIdUUID),
+                    mimeType: MimeType.jpeg.value
                 )
                 // Delete local image
-                imageStorageRepository.delete(entity: .albumCover, localId: album.localId)
+                imageStorageRepository.delete(entity: .albumCover, localId: album.localIdUUID)
             }
 
-            let syncedAlbum = AlbumMapper.toDomain(response, localId: album.localId)
+            let syncedAlbum = AlbumMapper.toDomain(response, localId: album.localIdUUID)
             try await albumRepository.update(syncedAlbum)
             return .success(syncedAlbum)
         } catch {
@@ -171,7 +171,7 @@ public struct AlbumFormUseCase: AlbumFormUseCaseProtocol, Sendable {
             } catch {
                 print("[AlbumFormUseCase] Failed to update album status to failed: \(error)")
             }
-            syncQueueService.enqueue(entityType: .album, operationType: .update, localId: album.localId)
+            syncQueueService.enqueue(entityType: .album, operationType: .update, localId: album.localIdUUID)
             return .successPendingSync(album)
         }
     }

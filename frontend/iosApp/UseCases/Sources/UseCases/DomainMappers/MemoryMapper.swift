@@ -18,7 +18,7 @@ public enum MemoryMapper {
 
         guard let imageUrl else { return nil }
 
-        return Memory(
+        return Memory.create(
             serverId: response.id,
             localId: UUID(),
             albumId: response.albumId,
@@ -45,7 +45,7 @@ public enum MemoryMapper {
 
         guard let imageUrl else { return nil }
 
-        return Memory(
+        return Memory.create(
             serverId: response.id,
             localId: localId,
             albumId: response.albumId,

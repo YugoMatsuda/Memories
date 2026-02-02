@@ -99,7 +99,7 @@ public final class AuthenticatedCoordinator: ObservableObject {
     public func makeLoginView(user: User) -> LoginView {
         let continueAsItem = LoginViewModel.ContinueAsUIModel(
             userName: user.name,
-            avatarUrl: user.avatarUrl,
+            avatarUrl: user.avatarURL,
             onTap: { [weak self] in
                 self?.state = .main
             }
@@ -107,7 +107,7 @@ public final class AuthenticatedCoordinator: ObservableObject {
         let viewModel = factory.makeLoginViewModel(
             onSuccess: { [weak self] session in
                 // New login succeeded, recreate AuthenticatedRootView with new session
-                self?.onReLogin?(session.token, session.userId)
+                self?.onReLogin?(session.token, session.userIdInt)
             },
             continueAsItem: continueAsItem
         )

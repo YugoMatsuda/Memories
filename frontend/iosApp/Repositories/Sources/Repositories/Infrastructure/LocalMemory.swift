@@ -1,6 +1,7 @@
 import Foundation
 import SwiftData
 import Domains
+import Shared
 
 @Model
 public final class LocalMemory: DomainConvertible {
@@ -22,31 +23,31 @@ public final class LocalMemory: DomainConvertible {
     // MARK: - DomainConvertible
 
     public required init(from entity: Memory) {
-        self.localId = entity.localId
-        self.serverId = entity.serverId
-        self.albumId = entity.albumId
-        self.albumLocalId = entity.albumLocalId
+        self.localId = entity.localId.uuid
+        self.serverId = entity.serverId?.intValue
+        self.albumId = entity.albumId?.intValue
+        self.albumLocalId = entity.albumLocalId.uuid
         self.title = entity.title
-        self.imageUrl = entity.imageUrl?.absoluteString
+        self.imageUrl = entity.imageUrl
         self.imageLocalPath = entity.imageLocalPath
-        self.createdAt = entity.createdAt
+        self.createdAt = entity.createdAt.date
         self.updatedAt = Date()
         self.syncStatusRaw = entity.syncStatus.rawValue
     }
 
     public func update(from entity: Memory) {
-        self.serverId = entity.serverId
-        self.albumId = entity.albumId
-        self.albumLocalId = entity.albumLocalId
+        self.serverId = entity.serverId?.intValue
+        self.albumId = entity.albumId?.intValue
+        self.albumLocalId = entity.albumLocalId.uuid
         self.title = entity.title
-        self.imageUrl = entity.imageUrl?.absoluteString
+        self.imageUrl = entity.imageUrl
         self.imageLocalPath = entity.imageLocalPath
         self.updatedAt = Date()
         self.syncStatusRaw = entity.syncStatus.rawValue
     }
 
     public func entity() -> Memory {
-        Memory(
+        Memory.create(
             serverId: serverId,
             localId: localId,
             albumId: albumId,
@@ -55,7 +56,7 @@ public final class LocalMemory: DomainConvertible {
             imageUrl: imageUrl.flatMap { URL(string: $0) },
             imageLocalPath: imageLocalPath,
             createdAt: createdAt,
-            syncStatus: SyncStatus(rawValue: syncStatusRaw) ?? .synced
+            syncStatus: Shared.__SyncStatus.from(rawValue: syncStatusRaw).toSwiftEnum()
         )
     }
 }

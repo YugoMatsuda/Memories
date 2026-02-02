@@ -36,7 +36,7 @@ public final class UserRepository: UserRepositoryProtocol, @unchecked Sendable {
     // MARK: - Write
 
     public func set(_ user: User) async throws {
-        let userId = user.id
+        let userId = Int(user.id)
         try await database.upsert(
             user,
             as: LocalUser.self,

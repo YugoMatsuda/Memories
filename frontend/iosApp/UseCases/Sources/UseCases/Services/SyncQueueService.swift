@@ -46,7 +46,7 @@ public final class SyncQueueService: SyncQueueServiceProtocol, @unchecked Sendab
     // MARK: - Public
 
     public func enqueue(entityType: EntityType, operationType: OperationType, localId: UUID) {
-        let operation = SyncOperation(
+        let operation = SyncOperation.create(
             id: UUID(),
             entityType: entityType,
             operationType: operationType,
@@ -80,7 +80,7 @@ public final class SyncQueueService: SyncQueueServiceProtocol, @unchecked Sendab
 
         for operation in operations {
             do {
-                try await syncQueueRepository.updateStatus(id: operation.id, status: .inProgress, errorMessage: nil)
+                try await syncQueueRepository.updateStatus(id: operation.idUUID, status: .inProgress, errorMessage: nil)
             } catch {
                 print("[SyncQueueService] Failed to update sync status to inProgress: \(error)")
             }
@@ -88,7 +88,7 @@ public final class SyncQueueService: SyncQueueServiceProtocol, @unchecked Sendab
             do {
                 try await execute(operation)
                 do {
-                    try await syncQueueRepository.remove(id: operation.id)
+                    try await syncQueueRepository.remove(id: operation.idUUID)
                 } catch {
                     print("[SyncQueueService] Failed to remove completed sync operation: \(error)")
                 }
@@ -96,7 +96,7 @@ public final class SyncQueueService: SyncQueueServiceProtocol, @unchecked Sendab
                 let errorMessage = mapErrorMessage(syncError)
                 print("[SyncQueueService] Sync failed: \(errorMessage)")
                 do {
-                    try await syncQueueRepository.updateStatus(id: operation.id, status: .failed, errorMessage: errorMessage)
+                    try await syncQueueRepository.updateStatus(id: operation.idUUID, status: .failed, errorMessage: errorMessage)
                 } catch {
                     print("[SyncQueueService] Failed to update sync status to failed: \(error)")
                 }
@@ -145,41 +145,41 @@ public final class SyncQueueService: SyncQueueServiceProtocol, @unchecked Sendab
     }
 
     private func executeAlbumCreate(_ operation: SyncOperation) async throws {
-        guard var album = await albumRepository.get(byLocalId: operation.localId) else {
-            print("[SyncQueueService] Album not found for localId: \(operation.localId)")
+        guard var album = await albumRepository.get(byLocalId: operation.localIdUUID) else {
+            print("[SyncQueueService] Album not found for localId: \(operation.localIdUUID)")
             return
         }
 
-        print("[SyncQueueService] executeAlbumCreate - localId: \(album.localId), serverId: \(String(describing: album.id))")
+        print("[SyncQueueService] executeAlbumCreate - localId: \(album.localIdUUID), serverId: \(String(describing: album.id))")
 
         // 1. Create album on server if not yet synced
         if album.id == nil {
             let response = try await albumGateway.createAlbum(title: album.title, coverImageUrl: nil)
             print("[SyncQueueService] Album created on server with id: \(response.id)")
-            try await albumRepository.markAsSynced(localId: operation.localId, serverId: response.id)
+            try await albumRepository.markAsSynced(localId: operation.localIdUUID, serverId: response.id)
             print("[SyncQueueService] Album marked as synced")
-            album = album.with(id: response.id, syncStatus: .synced)
+            album = album.with(serverId: response.id, syncStatus: .synced)
         }
 
         // 2. Upload cover image if exists locally (file must actually exist)
         if album.coverImageLocalPath != nil,
            let serverId = album.id,
-           let imageData = try? imageStorageRepository.get(entity: .albumCover, localId: operation.localId) {
+           let imageData = try? imageStorageRepository.get(entity: .albumCover, localId: operation.localIdUUID) {
             let response = try await albumGateway.uploadCoverImage(
                 albumId: serverId,
                 fileData: imageData,
-                fileName: MimeType.jpeg.fileName(for: operation.localId),
-                mimeType: MimeType.jpeg.rawValue
+                fileName: MimeType.jpeg.fileName(for: operation.localIdUUID),
+                mimeType: MimeType.jpeg.value
             )
             if let coverUrl = response.coverImageUrl {
-                try await albumRepository.updateCoverImageUrl(localId: operation.localId, url: coverUrl)
+                try await albumRepository.updateCoverImageUrl(localId: operation.localIdUUID, url: coverUrl)
             }
-            imageStorageRepository.delete(entity: .albumCover, localId: operation.localId)
+            imageStorageRepository.delete(entity: .albumCover, localId: operation.localIdUUID)
         }
     }
 
     private func executeAlbumUpdate(_ operation: SyncOperation) async throws {
-        guard let album = await albumRepository.get(byLocalId: operation.localId),
+        guard let album = await albumRepository.get(byLocalId: operation.localIdUUID),
               let serverId = album.id else {
             return
         }
@@ -189,17 +189,17 @@ public final class SyncQueueService: SyncQueueServiceProtocol, @unchecked Sendab
 
         // 2. Upload cover image if exists locally (file must actually exist)
         if album.coverImageLocalPath != nil,
-           let imageData = try? imageStorageRepository.get(entity: .albumCover, localId: operation.localId) {
+           let imageData = try? imageStorageRepository.get(entity: .albumCover, localId: operation.localIdUUID) {
             let response = try await albumGateway.uploadCoverImage(
                 albumId: serverId,
                 fileData: imageData,
-                fileName: MimeType.jpeg.fileName(for: operation.localId),
-                mimeType: MimeType.jpeg.rawValue
+                fileName: MimeType.jpeg.fileName(for: operation.localIdUUID),
+                mimeType: MimeType.jpeg.value
             )
             if let coverUrl = response.coverImageUrl {
-                try await albumRepository.updateCoverImageUrl(localId: operation.localId, url: coverUrl)
+                try await albumRepository.updateCoverImageUrl(localId: operation.localIdUUID, url: coverUrl)
             }
-            imageStorageRepository.delete(entity: .albumCover, localId: operation.localId)
+            imageStorageRepository.delete(entity: .albumCover, localId: operation.localIdUUID)
         }
 
         // 3. Mark as synced
@@ -208,20 +208,20 @@ public final class SyncQueueService: SyncQueueServiceProtocol, @unchecked Sendab
     }
 
     private func executeMemoryCreate(_ operation: SyncOperation) async throws {
-        guard let memory = await memoryRepository.get(byLocalId: operation.localId) else {
-            print("[SyncQueueService] Memory not found: \(operation.localId)")
+        guard let memory = await memoryRepository.get(byLocalId: operation.localIdUUID) else {
+            print("[SyncQueueService] Memory not found: \(operation.localIdUUID)")
             throw SyncError.entityNotFound
         }
 
-        print("[SyncQueueService] Memory albumId: \(String(describing: memory.albumId)), albumLocalId: \(memory.albumLocalId)")
+        print("[SyncQueueService] Memory albumId: \(String(describing: memory.albumIdInt)), albumLocalId: \(memory.albumLocalIdUUID)")
 
         // Get album server ID (either from memory or by looking up album)
         let albumServerId: Int
-        if let id = memory.albumId {
+        if let id = memory.albumIdInt {
             albumServerId = id
         } else {
             // Album was created offline, look up by localId
-            let album = await albumRepository.get(byLocalId: memory.albumLocalId)
+            let album = await albumRepository.get(byLocalId: memory.albumLocalIdUUID)
             print("[SyncQueueService] Album lookup result: \(String(describing: album)), serverId: \(String(describing: album?.id))")
             guard let album = album, let id = album.id else {
                 // Album not synced yet, keep in queue
@@ -231,7 +231,7 @@ public final class SyncQueueService: SyncQueueServiceProtocol, @unchecked Sendab
         }
 
         // Get local image data
-        let imageData = try imageStorageRepository.get(entity: .memory, localId: operation.localId)
+        let imageData = try imageStorageRepository.get(entity: .memory, localId: operation.localIdUUID)
 
         // Upload to server
         let response = try await memoryGateway.uploadMemory(
@@ -239,15 +239,15 @@ public final class SyncQueueService: SyncQueueServiceProtocol, @unchecked Sendab
             title: memory.title,
             imageRemoteUrl: nil,
             fileData: imageData,
-            fileName: MimeType.jpeg.fileName(for: operation.localId),
-            mimeType: MimeType.jpeg.rawValue
+            fileName: MimeType.jpeg.fileName(for: operation.localIdUUID),
+            mimeType: MimeType.jpeg.value
         )
 
         // Delete local image
-        imageStorageRepository.delete(entity: .memory, localId: operation.localId)
+        imageStorageRepository.delete(entity: .memory, localId: operation.localIdUUID)
 
         // Update local DB
-        try await memoryRepository.markAsSynced(localId: operation.localId, serverId: response.id)
+        try await memoryRepository.markAsSynced(localId: operation.localIdUUID, serverId: response.id)
     }
 
     private func executeUserUpdate(_ operation: SyncOperation) async throws {
@@ -256,7 +256,7 @@ public final class SyncQueueService: SyncQueueServiceProtocol, @unchecked Sendab
         }
 
         // 1. Update profile on server
-        let birthdayString = user.birthday.map { DateFormatters.yyyyMMdd.string(from: $0) }
+        let birthdayString = user.birthdayDate.map { DateFormatters.yyyyMMdd.string(from: $0) }
         var response = try await userGateway.updateUser(
             name: user.name,
             birthday: birthdayString,
@@ -265,13 +265,13 @@ public final class SyncQueueService: SyncQueueServiceProtocol, @unchecked Sendab
 
         // 2. Upload avatar if exists locally
         if user.avatarLocalPath != nil {
-            let imageData = try imageStorageRepository.get(entity: .avatar, localId: operation.localId)
+            let imageData = try imageStorageRepository.get(entity: .avatar, localId: operation.localIdUUID)
             response = try await userGateway.uploadAvatar(
                 fileData: imageData,
-                fileName: MimeType.jpeg.fileName(for: operation.localId),
-                mimeType: MimeType.jpeg.rawValue
+                fileName: MimeType.jpeg.fileName(for: operation.localIdUUID),
+                mimeType: MimeType.jpeg.value
             )
-            imageStorageRepository.delete(entity: .avatar, localId: operation.localId)
+            imageStorageRepository.delete(entity: .avatar, localId: operation.localIdUUID)
         }
 
         // 3. Update local DB

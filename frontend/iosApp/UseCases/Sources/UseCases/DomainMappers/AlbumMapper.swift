@@ -5,8 +5,8 @@ import Utilities
 
 public enum AlbumMapper {
     public static func toDomain(_ response: AlbumResponse) -> Album {
-        Album(
-            id: response.id,
+        Album.create(
+            serverId: response.id,
             localId: UUID(),
             title: response.title,
             coverImageUrl: response.coverImageUrl.flatMap { URL(string: $0) },
@@ -17,8 +17,8 @@ public enum AlbumMapper {
     }
 
     public static func toDomain(_ response: AlbumResponse, localId: UUID) -> Album {
-        Album(
-            id: response.id,
+        Album.create(
+            serverId: response.id,
             localId: localId,
             title: response.title,
             coverImageUrl: response.coverImageUrl.flatMap { URL(string: $0) },

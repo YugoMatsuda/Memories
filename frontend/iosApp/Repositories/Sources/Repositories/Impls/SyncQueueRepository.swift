@@ -58,11 +58,10 @@ public final class SyncQueueRepository: SyncQueueRepositoryProtocol, @unchecked 
             predicate: #Predicate { $0.id == targetId }
         )
         let operations: [SyncOperation] = try await database.fetch(descriptor)
-        guard var operation = operations.first else { return }
-        operation.status = status
-        operation.errorMessage = errorMessage
+        guard let operation = operations.first else { return }
+        let updatedOperation = operation.with(status: status, errorMessage: .some(errorMessage))
         try await database.upsert(
-            operation,
+            updatedOperation,
             as: LocalSyncOperation.self,
             predicate: #Predicate { $0.id == targetId }
         )

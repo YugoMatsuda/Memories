@@ -45,16 +45,16 @@ public struct SyncQueuesUseCase: SyncQueuesUseCaseProtocol, Sendable {
     private func fetchEntityDetails(for operation: SyncOperation) async -> (title: String?, serverId: Int?) {
         switch operation.entityType {
         case .album:
-            if let album = await albumRepository.get(byLocalId: operation.localId) {
+            if let album = await albumRepository.get(byLocalId: operation.localIdUUID) {
                 return (album.title, album.id)
             }
         case .memory:
-            if let memory = await memoryRepository.get(byLocalId: operation.localId) {
-                return (memory.title, memory.serverId)
+            if let memory = await memoryRepository.get(byLocalId: operation.localIdUUID) {
+                return (memory.title, memory.serverId?.intValue)
             }
         case .user:
             if let user = await userRepository.get() {
-                return (user.name, user.id)
+                return (user.name, Int(user.id))
             }
         }
         return (nil, nil)

@@ -36,11 +36,11 @@ public struct MemoryFormUseCase: MemoryFormUseCaseProtocol, Sendable {
         }
 
         // 2. Save to local DB (Optimistic)
-        let memory = Memory(
+        let memory = Memory.create(
             serverId: nil,
             localId: localId,
             albumId: album.id,
-            albumLocalId: album.localId,
+            albumLocalId: album.localIdUUID,
             title: title,
             imageUrl: nil,
             imageLocalPath: localImagePath,
@@ -78,23 +78,23 @@ public struct MemoryFormUseCase: MemoryFormUseCaseProtocol, Sendable {
                 title: memory.title,
                 imageRemoteUrl: nil,
                 fileData: imageData,
-                fileName: MimeType.jpeg.fileName(for: memory.localId),
-                mimeType: MimeType.jpeg.rawValue
+                fileName: MimeType.jpeg.fileName(for: memory.localIdUUID),
+                mimeType: MimeType.jpeg.value
             )
 
             // Delete local image
-            imageStorageRepository.delete(entity: .memory, localId: memory.localId)
+            imageStorageRepository.delete(entity: .memory, localId: memory.localIdUUID)
 
             // Update local DB
-            try await memoryRepository.markAsSynced(localId: memory.localId, serverId: response.id)
+            try await memoryRepository.markAsSynced(localId: memory.localIdUUID, serverId: response.id)
 
-            if let syncedMemory = MemoryMapper.toDomain(response, localId: memory.localId, albumLocalId: memory.albumLocalId) {
+            if let syncedMemory = MemoryMapper.toDomain(response, localId: memory.localIdUUID, albumLocalId: memory.albumLocalIdUUID) {
                 return .success(syncedMemory)
             }
-            return .success(memory.with(serverId: response.id, syncStatus: .synced))
+            return .success(memory.with(serverId: .some(response.id), syncStatus: .synced))
         } catch {
             // Sync failed, enqueue for later
-            syncQueueService.enqueue(entityType: .memory, operationType: .create, localId: memory.localId)
+            syncQueueService.enqueue(entityType: .memory, operationType: .create, localId: memory.localIdUUID)
             return .successPendingSync(memory)
         }
     }

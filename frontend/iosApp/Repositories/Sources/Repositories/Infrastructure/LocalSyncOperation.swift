@@ -1,6 +1,7 @@
 import Foundation
 import SwiftData
 import Domains
+import Shared
 
 @Model
 public final class LocalSyncOperation: DomainConvertible {
@@ -19,11 +20,11 @@ public final class LocalSyncOperation: DomainConvertible {
     // MARK: - DomainConvertible
 
     public required init(from entity: SyncOperation) {
-        self.id = entity.id
+        self.id = entity.id.uuid
         self.entityTypeRaw = entity.entityType.rawValue
         self.operationTypeRaw = entity.operationType.rawValue
-        self.localId = entity.localId
-        self.createdAt = entity.createdAt
+        self.localId = entity.localId.uuid
+        self.createdAt = entity.createdAt.date
         self.statusRaw = entity.status.rawValue
         self.errorMessage = entity.errorMessage
     }
@@ -34,13 +35,13 @@ public final class LocalSyncOperation: DomainConvertible {
     }
 
     public func entity() -> SyncOperation {
-        SyncOperation(
+        SyncOperation.create(
             id: id,
-            entityType: EntityType(rawValue: entityTypeRaw) ?? .album,
-            operationType: OperationType(rawValue: operationTypeRaw) ?? .create,
+            entityType: Shared.__EntityType.from(rawValue: entityTypeRaw).toSwiftEnum(),
+            operationType: Shared.__OperationType.from(rawValue: operationTypeRaw).toSwiftEnum(),
             localId: localId,
             createdAt: createdAt,
-            status: SyncOperationStatus(rawValue: statusRaw) ?? .pending,
+            status: Shared.__SyncOperationStatus.from(rawValue: statusRaw).toSwiftEnum(),
             errorMessage: errorMessage
         )
     }

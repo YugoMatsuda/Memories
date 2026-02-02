@@ -26,8 +26,8 @@ public final class UserProfileViewModel: ObservableObject {
         self.uiModel = UserProfileUIModel(
             name: user.name,
             username: user.username,
-            birthday: user.birthday,
-            avatarUrl: user.displayAvatar
+            birthday: user.birthdayDate,
+            avatarUrl: user.displayAvatarURL
         )
     }
 
@@ -69,7 +69,7 @@ public final class UserProfileViewModel: ObservableObject {
 
         switch result {
         case .success(let updatedUser):
-            uiModel.avatarUrl = updatedUser.displayAvatar
+            uiModel.avatarUrl = updatedUser.displayAvatarURL
             pendingAvatarImage = nil
             selectedImage = nil
             alertItem = AlertItem(
@@ -78,7 +78,7 @@ public final class UserProfileViewModel: ObservableObject {
                 buttons: [Alert.Button.default(Text("OK"))]
             )
         case .successPendingSync(let updatedUser):
-            uiModel.avatarUrl = updatedUser.displayAvatar
+            uiModel.avatarUrl = updatedUser.displayAvatarURL
             pendingAvatarImage = nil
             selectedImage = nil
             alertItem = AlertItem(

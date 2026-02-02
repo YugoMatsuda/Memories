@@ -79,7 +79,7 @@ public struct UserProfileUseCase: UserProfileUseCaseProtocol, Sendable {
     private func syncUpdate(user: User, avatarData: Data?, operationLocalId: UUID) async -> UserProfileUseCaseModel.UpdateProfileResult {
         do {
             // API call
-            let birthdayString = user.birthday.map { DateFormatters.yyyyMMdd.string(from: $0) }
+            let birthdayString = user.birthdayDate.map { DateFormatters.yyyyMMdd.string(from: $0) }
             var response = try await userGateway.updateUser(
                 name: user.name,
                 birthday: birthdayString,
@@ -91,7 +91,7 @@ public struct UserProfileUseCase: UserProfileUseCaseProtocol, Sendable {
                 response = try await userGateway.uploadAvatar(
                     fileData: imageData,
                     fileName: MimeType.jpeg.fileName(for: operationLocalId),
-                    mimeType: MimeType.jpeg.rawValue
+                    mimeType: MimeType.jpeg.value
                 )
                 // Delete local image
                 imageStorageRepository.delete(entity: .avatar, localId: operationLocalId)
@@ -114,7 +114,7 @@ public struct UserProfileUseCase: UserProfileUseCaseProtocol, Sendable {
                 print("[UserProfileUseCase] Failed to save failed user to cache: \(error)")
             }
             syncQueueService.enqueue(entityType: .user, operationType: .update, localId: operationLocalId)
-                return .successPendingSync(user)
+            return .successPendingSync(user)
         }
     }
 }

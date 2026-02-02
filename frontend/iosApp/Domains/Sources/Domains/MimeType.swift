@@ -1,15 +1,14 @@
 import Foundation
+import Shared
 
-public enum MimeType: String, Sendable {
-    case jpeg = "image/jpeg"
+// Type alias for KMP MimeType (SKIE generates Swift enum as Shared.MimeType)
+public typealias MimeType = Shared.MimeType
 
-    public var fileExtension: String {
-        switch self {
-        case .jpeg: return "jpg"
-        }
-    }
+// MARK: - Swift-friendly extensions
 
+extension Shared.MimeType {
+    /// Generate filename with Swift UUID
     public func fileName(for id: UUID) -> String {
-        "\(id).\(fileExtension)"
+        fileName(id: Shared.LocalId.from(uuid: id))
     }
 }

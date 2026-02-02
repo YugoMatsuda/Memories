@@ -2,6 +2,7 @@ import Foundation
 import Combine
 import SwiftData
 import Domains
+import Shared
 
 public final class MemoryRepository: MemoryRepositoryProtocol, @unchecked Sendable {
     private let database: SwiftDatabase
@@ -48,29 +49,29 @@ public final class MemoryRepository: MemoryRepositoryProtocol, @unchecked Sendab
         // Get existing memories to preserve localIds
         let existingMemories = await getAll(albumLocalId: albumLocalId)
         let existingByServerId = Dictionary(uniqueKeysWithValues: existingMemories.compactMap { memory -> (Int, Memory)? in
-            guard let serverId = memory.serverId else { return nil }
+            guard let serverId = memory.serverId?.intValue else { return nil }
             return (serverId, memory)
         })
 
         for memory in memories {
             // Preserve existing localId if memory exists (lookup by serverId)
             var memoryToSave = memory
-            if let serverId = memory.serverId, let existing = existingByServerId[serverId] {
-                memoryToSave = Memory(
-                    serverId: memory.serverId,
-                    localId: existing.localId,
-                    albumId: memory.albumId,
-                    albumLocalId: memory.albumLocalId,
+            if let serverId = memory.serverId?.intValue, let existing = existingByServerId[serverId] {
+                memoryToSave = Memory.create(
+                    serverId: serverId,
+                    localId: existing.localIdUUID,
+                    albumId: memory.albumId?.intValue,
+                    albumLocalId: memory.albumLocalId.uuid,
                     title: memory.title,
-                    imageUrl: memory.imageUrl,
+                    imageUrl: memory.imageURL,
                     imageLocalPath: memory.imageLocalPath,
-                    createdAt: memory.createdAt,
+                    createdAt: memory.createdAt.date,
                     syncStatus: memory.syncStatus
                 )
             }
 
             // Upsert by localId
-            let targetLocalId = memoryToSave.localId
+            let targetLocalId = memoryToSave.localId.uuid
             try await database.upsert(
                 memoryToSave,
                 as: LocalMemory.self,
@@ -83,7 +84,8 @@ public final class MemoryRepository: MemoryRepositoryProtocol, @unchecked Sendab
         // Get all existing memories to preserve localIds
         var existingByServerId: [Int: Memory] = [:]
         for memory in memories {
-            if let existing = await getByServerId(memory.serverId), let serverId = memory.serverId {
+            if let serverId = memory.serverId?.intValue,
+               let existing = await getByServerId(serverId) {
                 existingByServerId[serverId] = existing
             }
         }
@@ -91,22 +93,22 @@ public final class MemoryRepository: MemoryRepositoryProtocol, @unchecked Sendab
         for memory in memories {
             // Preserve existing localId if memory exists (lookup by serverId)
             var memoryToSave = memory
-            if let serverId = memory.serverId, let existing = existingByServerId[serverId] {
-                memoryToSave = Memory(
-                    serverId: memory.serverId,
-                    localId: existing.localId,
-                    albumId: memory.albumId,
-                    albumLocalId: memory.albumLocalId,
+            if let serverId = memory.serverId?.intValue, let existing = existingByServerId[serverId] {
+                memoryToSave = Memory.create(
+                    serverId: serverId,
+                    localId: existing.localIdUUID,
+                    albumId: memory.albumId?.intValue,
+                    albumLocalId: memory.albumLocalId.uuid,
                     title: memory.title,
-                    imageUrl: memory.imageUrl,
+                    imageUrl: memory.imageURL,
                     imageLocalPath: memory.imageLocalPath,
-                    createdAt: memory.createdAt,
+                    createdAt: memory.createdAt.date,
                     syncStatus: memory.syncStatus
                 )
             }
 
             // Upsert by localId
-            let targetLocalId = memoryToSave.localId
+            let targetLocalId = memoryToSave.localId.uuid
             try await database.upsert(
                 memoryToSave,
                 as: LocalMemory.self,
@@ -115,8 +117,7 @@ public final class MemoryRepository: MemoryRepositoryProtocol, @unchecked Sendab
         }
     }
 
-    private func getByServerId(_ serverId: Int?) async -> Memory? {
-        guard let serverId = serverId else { return nil }
+    private func getByServerId(_ serverId: Int) async -> Memory? {
         let targetServerId: Int? = serverId
         let descriptor = FetchDescriptor<LocalMemory>(
             predicate: #Predicate { $0.serverId == targetServerId }
@@ -138,11 +139,11 @@ public final class MemoryRepository: MemoryRepositoryProtocol, @unchecked Sendab
     // MARK: - Sync Status
 
     public func markAsSynced(localId: UUID, serverId: Int) async throws {
-        guard var memory = await get(byLocalId: localId) else { return }
-        memory = memory.with(serverId: serverId, syncStatus: .synced)
-        let targetLocalId = memory.localId
+        guard let memory = await get(byLocalId: localId) else { return }
+        let updatedMemory = memory.with(serverId: .some(serverId), syncStatus: .synced)
+        let targetLocalId = updatedMemory.localId.uuid
         try await database.upsert(
-            memory,
+            updatedMemory,
             as: LocalMemory.self,
             predicate: #Predicate { $0.localId == targetLocalId }
         )

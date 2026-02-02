@@ -51,15 +51,15 @@ extension SyncQueuesViewModel {
 
         public init(from item: SyncQueueItem) {
             let operation = item.operation
-            self.id = operation.id
+            self.id = operation.idUUID
             self.entityType = Self.mapEntityType(operation.entityType)
             self.operationType = Self.mapOperationType(operation.operationType)
             self.status = Self.mapStatus(operation.status)
             self.errorMessage = operation.errorMessage
             self.entityTitle = item.entityTitle
-            self.localId = operation.localId.uuidString.prefix(8).lowercased()
+            self.localId = String(operation.localIdUUID.uuidString.prefix(8)).lowercased()
             self.serverId = item.entityServerId.map { String($0) }
-            self.createdAt = Self.formatDate(operation.createdAt)
+            self.createdAt = Self.formatDate(operation.createdAtDate)
         }
 
         private static func mapEntityType(_ type: EntityType) -> String {
