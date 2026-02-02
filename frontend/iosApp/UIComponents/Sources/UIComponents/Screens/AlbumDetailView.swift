@@ -41,6 +41,21 @@ public struct AlbumDetailView: View {
         .onAppear {
             viewModel.onAppear()
         }
+        .fullScreenCover(isPresented: showViewerBinding) {
+            if case .success(let listData) = viewModel.displayResult {
+                MemoryViewerView(
+                    viewerMemoryId: $viewModel.viewerMemoryId,
+                    items: listData.items
+                )
+            }
+        }
+    }
+
+    private var showViewerBinding: Binding<Bool> {
+        Binding(
+            get: { viewModel.viewerMemoryId != nil },
+            set: { if !$0 { viewModel.closeMemoryViewer() } }
+        )
     }
 
     @ViewBuilder

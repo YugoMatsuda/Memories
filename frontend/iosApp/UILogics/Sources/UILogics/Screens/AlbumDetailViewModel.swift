@@ -10,6 +10,9 @@ public final class AlbumDetailViewModel: ObservableObject {
     @Published public private(set) var displayResult: DisplayResult = .loading
     @Published public private(set) var album: Album
 
+    // Viewer state (nil = hidden, non-nil = showing)
+    @Published public var viewerMemoryId: UUID?
+
     private let albumDetailUseCase: AlbumDetailUseCaseProtocol
     private let router: AuthenticatedRouterProtocol
     private var cancellables = Set<AnyCancellable>()
@@ -118,12 +121,20 @@ public final class AlbumDetailViewModel: ObservableObject {
                 displayImage: memory.displayImage,
                 createdAt: memory.createdAt,
                 syncStatus: memory.syncStatus,
-                didTap: {
-                    // TODO: Navigate to memory detail
+                didTap: { [weak self] in
+                    self?.showMemoryViewer(memoryId: memory.localId)
                 }
             )
         }
         return ListData(memories: memories, items: items, currentPage: currentPage, hasMore: hasMore)
+    }
+
+    public func showMemoryViewer(memoryId: UUID) {
+        viewerMemoryId = memoryId
+    }
+
+    public func closeMemoryViewer() {
+        viewerMemoryId = nil
     }
 
     private func mapDisplayError(_ error: AlbumDetailUseCaseModel.DisplayResult.Error) -> ErrorUIModel {
