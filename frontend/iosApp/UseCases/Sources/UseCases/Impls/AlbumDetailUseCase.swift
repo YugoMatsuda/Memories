@@ -2,6 +2,7 @@ import Foundation
 import Combine
 import Domains
 import Repositories
+@preconcurrency import Shared
 import APIGateways
 
 public final class AlbumDetailUseCase: AlbumDetailUseCaseProtocol, @unchecked Sendable {
@@ -43,10 +44,10 @@ public final class AlbumDetailUseCase: AlbumDetailUseCaseProtocol, @unchecked Se
         if reachabilityRepository.isConnected {
             do {
                 let response = try await memoryGateway.getMemories(albumId: albumServerId, page: 1, pageSize: Const.pageSize)
-                let memories = response.items.compactMap { MemoryMapper.toDomain($0, albumLocalId: album.localIdUUID) }
+                let memories = response.items.compactMap { Shared.MemoryMapper.shared.toDomain(response: $0, albumLocalId: album.localId) }
                 try? await memoryRepository.syncSet(memories, albumLocalId: album.localIdUUID)
                 let allMemories = await memoryRepository.getAll(albumLocalId: album.localIdUUID)
-                let hasMore = response.page * response.pageSize < response.total
+                let hasMore = Int(response.page) * Int(response.pageSize) < Int(response.total)
                 return .success(AlbumDetailUseCaseModel.PageInfo(memories: allMemories, hasMore: hasMore))
             } catch {
                 // Fallback to cache on error
@@ -75,10 +76,10 @@ public final class AlbumDetailUseCase: AlbumDetailUseCaseProtocol, @unchecked Se
 
         do {
             let response = try await memoryGateway.getMemories(albumId: albumServerId, page: page, pageSize: Const.pageSize)
-            let memories = response.items.compactMap { MemoryMapper.toDomain($0, albumLocalId: album.localIdUUID) }
+            let memories = response.items.compactMap { Shared.MemoryMapper.shared.toDomain(response: $0, albumLocalId: album.localId) }
             try? await memoryRepository.syncAppend(memories)
             let allMemories = await memoryRepository.getAll(albumLocalId: album.localIdUUID)
-            let hasMore = response.page * response.pageSize < response.total
+            let hasMore = Int(response.page) * Int(response.pageSize) < Int(response.total)
             return .success(AlbumDetailUseCaseModel.PageInfo(memories: allMemories, hasMore: hasMore))
         } catch {
             return .failure(mapNextError(error))
@@ -89,22 +90,22 @@ public final class AlbumDetailUseCase: AlbumDetailUseCaseProtocol, @unchecked Se
         if reachabilityRepository.isConnected {
             do {
                 let response = try await albumGateway.getAlbum(id: serverId)
-                let album = AlbumMapper.toDomain(response)
+                let album = Shared.AlbumMapper.shared.toDomain(response: response)
                 try? await albumRepository.syncSet([album])
                 // Return from cache to get preserved localId
                 if let cachedAlbum = await albumRepository.get(byServerId: serverId) {
                     return .success(cachedAlbum)
                 }
                 return .success(album)
-            } catch let error as NSError {
-                if error.domain == NSURLErrorDomain {
-                    return .failure(.networkError)
-                }
-                // Check for 404
-                if let httpResponse = error.userInfo["HTTPResponse"] as? HTTPURLResponse,
-                   httpResponse.statusCode == 404 {
+            } catch let error as Shared.ApiError {
+                if error is Shared.ApiError.NotFound {
                     return .failure(.notFound)
                 }
+                if error is Shared.ApiError.NetworkError {
+                    return .failure(.networkError)
+                }
+                return .failure(.notFound)
+            } catch {
                 return .failure(.notFound)
             }
         } else {

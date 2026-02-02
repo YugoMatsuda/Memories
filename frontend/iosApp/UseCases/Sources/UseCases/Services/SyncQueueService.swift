@@ -2,8 +2,9 @@ import Foundation
 import Combine
 import Domains
 import Repositories
-import APIGateways
+@preconcurrency import Shared
 import Utilities
+import APIGateways
 
 public protocol SyncQueueServiceProtocol: Sendable {
     func enqueue(entityType: EntityType, operationType: OperationType, localId: UUID)
@@ -155,10 +156,11 @@ public final class SyncQueueService: SyncQueueServiceProtocol, @unchecked Sendab
         // 1. Create album on server if not yet synced
         if album.id == nil {
             let response = try await albumGateway.createAlbum(title: album.title, coverImageUrl: nil)
-            print("[SyncQueueService] Album created on server with id: \(response.id)")
-            try await albumRepository.markAsSynced(localId: operation.localIdUUID, serverId: response.id)
+            let serverId = Int(response.id)
+            print("[SyncQueueService] Album created on server with id: \(serverId)")
+            try await albumRepository.markAsSynced(localId: operation.localIdUUID, serverId: serverId)
             print("[SyncQueueService] Album marked as synced")
-            album = album.with(serverId: response.id, syncStatus: .synced)
+            album = album.with(serverId: serverId, syncStatus: .synced)
         }
 
         // 2. Upload cover image if exists locally (file must actually exist)
@@ -247,7 +249,7 @@ public final class SyncQueueService: SyncQueueServiceProtocol, @unchecked Sendab
         imageStorageRepository.delete(entity: .memory, localId: operation.localIdUUID)
 
         // Update local DB
-        try await memoryRepository.markAsSynced(localId: operation.localIdUUID, serverId: response.id)
+        try await memoryRepository.markAsSynced(localId: operation.localIdUUID, serverId: Int(response.id))
     }
 
     private func executeUserUpdate(_ operation: SyncOperation) async throws {
@@ -275,7 +277,7 @@ public final class SyncQueueService: SyncQueueServiceProtocol, @unchecked Sendab
         }
 
         // 3. Update local DB
-        let syncedUser = UserMapper.toDomain(response)
+        let syncedUser = Shared.UserMapper.shared.toDomain(response: response)
         try await userRepository.set(syncedUser)
     }
 

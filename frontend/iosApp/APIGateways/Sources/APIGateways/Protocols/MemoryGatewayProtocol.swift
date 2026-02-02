@@ -1,9 +1,8 @@
 import Foundation
-import APIClients
+@preconcurrency import Shared
 
 public protocol MemoryGatewayProtocol: Sendable {
-    init(apiClient: any APIClientProtocol)
-    func getMemories(albumId: Int, page: Int, pageSize: Int) async throws -> PaginatedMemoriesResponse
+    func getMemories(albumId: Int, page: Int, pageSize: Int) async throws -> Shared.PaginatedMemoriesResponse
     func uploadMemory(
         albumId: Int,
         title: String,
@@ -11,5 +10,5 @@ public protocol MemoryGatewayProtocol: Sendable {
         fileData: Data?,
         fileName: String?,
         mimeType: String?
-    ) async throws -> MemoryResponse
+    ) async throws -> Shared.MemoryResponse
 }

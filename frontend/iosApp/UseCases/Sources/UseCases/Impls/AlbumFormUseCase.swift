@@ -1,9 +1,10 @@
 import Foundation
 import Domains
 import Repositories
+@preconcurrency import Shared
 import APIGateways
 
-public struct AlbumFormUseCase: AlbumFormUseCaseProtocol, Sendable {
+public struct AlbumFormUseCase: AlbumFormUseCaseProtocol, @unchecked Sendable {
     private let albumRepository: AlbumRepositoryProtocol
     private let albumGateway: AlbumGatewayProtocol
     private let syncQueueService: SyncQueueServiceProtocol
@@ -118,7 +119,7 @@ public struct AlbumFormUseCase: AlbumFormUseCaseProtocol, Sendable {
             // Upload cover image
             if let imageData = coverImageData {
                 response = try await albumGateway.uploadCoverImage(
-                    albumId: response.id,
+                    albumId: Int(response.id),
                     fileData: imageData,
                     fileName: MimeType.jpeg.fileName(for: album.localIdUUID),
                     mimeType: MimeType.jpeg.value
@@ -128,9 +129,9 @@ public struct AlbumFormUseCase: AlbumFormUseCaseProtocol, Sendable {
             }
 
             // Update local DB
-            try await albumRepository.markAsSynced(localId: album.localIdUUID, serverId: response.id)
+            try await albumRepository.markAsSynced(localId: album.localIdUUID, serverId: Int(response.id))
 
-            let syncedAlbum = AlbumMapper.toDomain(response, localId: album.localIdUUID)
+            let syncedAlbum = Shared.AlbumMapper.shared.toDomain(response: response, localId: album.localId)
             return .success(syncedAlbum)
         } catch {
             // Sync failed, enqueue for later
@@ -161,7 +162,7 @@ public struct AlbumFormUseCase: AlbumFormUseCaseProtocol, Sendable {
                 imageStorageRepository.delete(entity: .albumCover, localId: album.localIdUUID)
             }
 
-            let syncedAlbum = AlbumMapper.toDomain(response, localId: album.localIdUUID)
+            let syncedAlbum = Shared.AlbumMapper.shared.toDomain(response: response, localId: album.localId)
             try await albumRepository.update(syncedAlbum)
             return .success(syncedAlbum)
         } catch {

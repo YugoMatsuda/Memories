@@ -1,22 +1,22 @@
 import Foundation
-import APIGateways
+@preconcurrency import Shared
 import Repositories
 import Domains
-import APIClients
+import APIGateways
 
-public struct SplashUseCase: SplashUseCaseProtocol, Sendable {
-    private let userGateway: any UserGatewayProtocol
-    private let userRepository: any UserRepositoryProtocol
-    private let authSessionRepository: any AuthSessionRepositoryProtocol
-    private let reachabilityRepository: any ReachabilityRepositoryProtocol
-    private let syncQueueRepository: any SyncQueueRepositoryProtocol
+public struct SplashUseCase: SplashUseCaseProtocol, @unchecked Sendable {
+    private let userGateway: UserGatewayProtocol
+    private let userRepository: UserRepositoryProtocol
+    private let authSessionRepository: AuthSessionRepositoryProtocol
+    private let reachabilityRepository: ReachabilityRepositoryProtocol
+    private let syncQueueRepository: SyncQueueRepositoryProtocol
 
     public init(
-        userGateway: any UserGatewayProtocol,
-        userRepository: any UserRepositoryProtocol,
-        authSessionRepository: any AuthSessionRepositoryProtocol,
-        reachabilityRepository: any ReachabilityRepositoryProtocol,
-        syncQueueRepository: any SyncQueueRepositoryProtocol
+        userGateway: UserGatewayProtocol,
+        userRepository: UserRepositoryProtocol,
+        authSessionRepository: AuthSessionRepositoryProtocol,
+        reachabilityRepository: ReachabilityRepositoryProtocol,
+        syncQueueRepository: SyncQueueRepositoryProtocol
     ) {
         self.userGateway = userGateway
         self.userRepository = userRepository
@@ -30,14 +30,14 @@ public struct SplashUseCase: SplashUseCaseProtocol, Sendable {
         if reachabilityRepository.isConnected {
             do {
                 let response = try await userGateway.getUser()
-                let user = UserMapper.toDomain(response)
+                let user = Shared.UserMapper.shared.toDomain(response: response)
                 do {
                     try await userRepository.set(user)
                 } catch {
                     print("[SplashUseCase] Failed to save user to cache: \(error)")
                 }
                 return .success(user)
-            } catch let error as APIError {
+            } catch let error as Shared.ApiError {
                 // Fallback to cache on error
                 if let cachedUser = await userRepository.get() {
                     userRepository.notify(cachedUser)
@@ -66,13 +66,13 @@ public struct SplashUseCase: SplashUseCaseProtocol, Sendable {
         authSessionRepository.clearSession()
     }
 
-    private func mapError(_ error: APIError) -> SplashUseCaseModel.LaunchAppResult.Error {
+    private func mapError(_ error: Shared.ApiError) -> SplashUseCaseModel.LaunchAppResult.Error {
         switch error {
-        case .invalidAPIToken:
+        case is Shared.ApiError.InvalidApiToken:
             return .sessionExpired
-        case .networkError, .timeout:
+        case is Shared.ApiError.NetworkError, is Shared.ApiError.Timeout:
             return .networkError
-        case .serverError, .serviceUnavailable:
+        case is Shared.ApiError.ServerError, is Shared.ApiError.ServiceUnavailable:
             return .serverError
         default:
             return .unknown

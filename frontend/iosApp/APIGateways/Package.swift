@@ -9,11 +9,10 @@ let package = Package(
         .library(name: "APIGateways", targets: ["APIGateways"]),
     ],
     dependencies: [
-        .package(path: "../APIClients"),
         .package(path: "../Domains"),
     ],
     targets: [
-        .target(name: "APIGateways", dependencies: ["APIClients", "Domains"]),
+        .target(name: "APIGateways", dependencies: ["Domains"]),
         .testTarget(name: "APIGatewaysTests", dependencies: ["APIGateways"]),
     ]
 )

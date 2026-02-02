@@ -1,28 +1,28 @@
 import Foundation
-import APIClients
+import Domains
+@preconcurrency import Shared
 
-public struct UserGateway: UserGatewayProtocol {
-    private let apiClient: APIClientProtocol
+/// Adapter that wraps KMP UserGatewayImpl and exposes it through Swift protocol
+public struct UserGatewayAdapter: UserGatewayProtocol, @unchecked Sendable {
+    private let kmpGateway: Shared.UserGatewayImpl
 
-    public init(apiClient: APIClientProtocol) {
-        self.apiClient = apiClient
+    public init(kmpGateway: Shared.UserGatewayImpl) {
+        self.kmpGateway = kmpGateway
     }
 
-    public func getUser() async throws -> UserResponse {
-        let request = GetUserRequest()
-        let data = try await apiClient.send(request)
-        return try JSONDecoder().decode(UserResponse.self, from: data)
+    public func getUser() async throws -> Shared.UserResponse {
+        try await kmpGateway.getUser()
     }
 
-    public func updateUser(name: String?, birthday: String?, avatarUrl: String?) async throws -> UserResponse {
-        let request = UserUpdateRequest(name: name, birthday: birthday, avatarUrl: avatarUrl)
-        let data = try await apiClient.send(request)
-        return try JSONDecoder().decode(UserResponse.self, from: data)
+    public func updateUser(name: String?, birthday: String?, avatarUrl: String?) async throws -> Shared.UserResponse {
+        try await kmpGateway.updateUser(name: name, birthday: birthday, avatarUrl: avatarUrl)
     }
 
-    public func uploadAvatar(fileData: Data, fileName: String, mimeType: String) async throws -> UserResponse {
-        let request = AvatarUploadRequest(fileData: fileData, fileName: fileName, mimeType: mimeType)
-        let data = try await apiClient.send(request)
-        return try JSONDecoder().decode(UserResponse.self, from: data)
+    public func uploadAvatar(fileData: Data, fileName: String, mimeType: String) async throws -> Shared.UserResponse {
+        try await kmpGateway.uploadAvatar(
+            fileData: KotlinByteArray.from(data: fileData),
+            fileName: fileName,
+            mimeType: mimeType
+        )
     }
 }

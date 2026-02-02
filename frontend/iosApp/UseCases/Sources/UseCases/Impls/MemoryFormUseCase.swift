@@ -1,9 +1,10 @@
 import Foundation
 import Domains
 import Repositories
+@preconcurrency import Shared
 import APIGateways
 
-public struct MemoryFormUseCase: MemoryFormUseCaseProtocol, Sendable {
+public struct MemoryFormUseCase: MemoryFormUseCaseProtocol, @unchecked Sendable {
     private let memoryRepository: MemoryRepositoryProtocol
     private let memoryGateway: MemoryGatewayProtocol
     private let syncQueueService: SyncQueueServiceProtocol
@@ -86,12 +87,12 @@ public struct MemoryFormUseCase: MemoryFormUseCaseProtocol, Sendable {
             imageStorageRepository.delete(entity: .memory, localId: memory.localIdUUID)
 
             // Update local DB
-            try await memoryRepository.markAsSynced(localId: memory.localIdUUID, serverId: response.id)
+            try await memoryRepository.markAsSynced(localId: memory.localIdUUID, serverId: Int(response.id))
 
-            if let syncedMemory = MemoryMapper.toDomain(response, localId: memory.localIdUUID, albumLocalId: memory.albumLocalIdUUID) {
+            if let syncedMemory = Shared.MemoryMapper.shared.toDomain(response: response, localId: memory.localId, albumLocalId: memory.albumLocalId) {
                 return .success(syncedMemory)
             }
-            return .success(memory.with(serverId: .some(response.id), syncStatus: .synced))
+            return .success(memory.with(serverId: .some(Int(response.id)), syncStatus: .synced))
         } catch {
             // Sync failed, enqueue for later
             syncQueueService.enqueue(entityType: .memory, operationType: .create, localId: memory.localIdUUID)

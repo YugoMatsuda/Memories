@@ -1,10 +1,10 @@
 import Foundation
 import Domains
-import APIGateways
-import APIClients
+@preconcurrency import Shared
 import Repositories
+import APIGateways
 
-public struct LoginUseCase: LoginUseCaseProtocol, Sendable {
+public struct LoginUseCase: LoginUseCaseProtocol, @unchecked Sendable {
     private let authGateway: AuthGatewayProtocol
     private let authSessionRepository: AuthSessionRepositoryProtocol
 
@@ -19,23 +19,23 @@ public struct LoginUseCase: LoginUseCaseProtocol, Sendable {
     public func login(username: String, password: String) async -> LoginUseCaseModel.LoginResult {
         do {
             let response = try await authGateway.login(username: username, password: password)
-            let session = AuthSession.create(token: response.token, userId: response.userId)
+            let session = AuthSession.create(token: response.token, userId: Int(response.userId))
             authSessionRepository.save(session: session)
             return .success(session)
-        } catch let error as APIError {
+        } catch let error as Shared.ApiError {
             return .failure(mapError(error))
         } catch {
             return .failure(.unknown)
         }
     }
 
-    private func mapError(_ error: APIError) -> LoginUseCaseModel.LoginResult.Error {
+    private func mapError(_ error: Shared.ApiError) -> LoginUseCaseModel.LoginResult.Error {
         switch error {
-        case .invalidAPIToken, .forbidden:
+        case is Shared.ApiError.InvalidApiToken, is Shared.ApiError.Forbidden:
             return .invalidCredentials
-        case .networkError, .timeout:
+        case is Shared.ApiError.NetworkError, is Shared.ApiError.Timeout:
             return .networkError
-        case .serverError, .serviceUnavailable:
+        case is Shared.ApiError.ServerError, is Shared.ApiError.ServiceUnavailable:
             return .serverError
         default:
             return .unknown

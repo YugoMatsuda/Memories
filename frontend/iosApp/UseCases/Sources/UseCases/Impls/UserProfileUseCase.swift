@@ -1,11 +1,11 @@
 import Foundation
 import Domains
-import APIGateways
-import APIClients
+@preconcurrency import Shared
 import Repositories
 import Utilities
+import APIGateways
 
-public struct UserProfileUseCase: UserProfileUseCaseProtocol, Sendable {
+public struct UserProfileUseCase: UserProfileUseCaseProtocol, @unchecked Sendable {
     private let userGateway: UserGatewayProtocol
     private let userRepository: UserRepositoryProtocol
     private let authSessionRepository: AuthSessionRepositoryProtocol
@@ -98,7 +98,7 @@ public struct UserProfileUseCase: UserProfileUseCaseProtocol, Sendable {
             }
 
             // Update local DB
-            let syncedUser = UserMapper.toDomain(response)
+            let syncedUser = Shared.UserMapper.shared.toDomain(response: response)
             do {
                 try await userRepository.set(syncedUser)
             } catch {

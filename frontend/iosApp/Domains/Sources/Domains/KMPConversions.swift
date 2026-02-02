@@ -63,3 +63,27 @@ extension String {
         URL(fileURLWithPath: self)
     }
 }
+
+// MARK: - KotlinByteArray <-> Data Conversion
+
+extension Shared.KotlinByteArray {
+    /// Create KotlinByteArray from Swift Data
+    public static func from(data: Data) -> Shared.KotlinByteArray {
+        let byteArray = Shared.KotlinByteArray(size: Int32(data.count))
+        for (index, byte) in data.enumerated() {
+            byteArray.set(index: Int32(index), value: Int8(bitPattern: byte))
+        }
+        return byteArray
+    }
+}
+
+extension Data {
+    /// Convert KotlinByteArray to Swift Data
+    public static func from(byteArray: Shared.KotlinByteArray) -> Data {
+        var bytes = [UInt8]()
+        for i in 0..<byteArray.size {
+            bytes.append(UInt8(bitPattern: byteArray.get(index: i)))
+        }
+        return Data(bytes)
+    }
+}

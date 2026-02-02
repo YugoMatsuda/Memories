@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
  * Login response
  */
 @Serializable
-internal data class TokenResponse(
+data class TokenResponse(
     val token: String,
     @SerialName("user_id")
     val userId: Int
@@ -17,7 +17,7 @@ internal data class TokenResponse(
  * User response
  */
 @Serializable
-internal data class UserResponse(
+data class UserResponse(
     val id: Int,
     val name: String,
     val username: String,
@@ -30,7 +30,7 @@ internal data class UserResponse(
  * Album response
  */
 @Serializable
-internal data class AlbumResponse(
+data class AlbumResponse(
     val id: Int,
     val title: String,
     @SerialName("cover_image_url")
@@ -43,7 +43,7 @@ internal data class AlbumResponse(
  * Memory response
  */
 @Serializable
-internal data class MemoryResponse(
+data class MemoryResponse(
     val id: Int,
     @SerialName("album_id")
     val albumId: Int,
@@ -60,7 +60,7 @@ internal data class MemoryResponse(
  * Paginated albums response
  */
 @Serializable
-internal data class PaginatedAlbumsResponse(
+data class PaginatedAlbumsResponse(
     val items: List<AlbumResponse>,
     val page: Int,
     @SerialName("page_size")
@@ -72,7 +72,7 @@ internal data class PaginatedAlbumsResponse(
  * Paginated memories response
  */
 @Serializable
-internal data class PaginatedMemoriesResponse(
+data class PaginatedMemoriesResponse(
     val items: List<MemoryResponse>,
     val page: Int,
     @SerialName("page_size")

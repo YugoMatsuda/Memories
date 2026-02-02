@@ -1,17 +1,17 @@
 import Foundation
-import APIClients
+import Domains
+@preconcurrency import Shared
 
-public struct MemoryGateway: MemoryGatewayProtocol {
-    private let apiClient: APIClientProtocol
+/// Adapter that wraps KMP MemoryGatewayImpl and exposes it through Swift protocol
+public struct MemoryGatewayAdapter: MemoryGatewayProtocol, @unchecked Sendable {
+    private let kmpGateway: Shared.MemoryGatewayImpl
 
-    public init(apiClient: APIClientProtocol) {
-        self.apiClient = apiClient
+    public init(kmpGateway: Shared.MemoryGatewayImpl) {
+        self.kmpGateway = kmpGateway
     }
 
-    public func getMemories(albumId: Int, page: Int, pageSize: Int) async throws -> PaginatedMemoriesResponse {
-        let request = GetMemoriesRequest(albumId: albumId, page: page, pageSize: pageSize)
-        let data = try await apiClient.send(request)
-        return try JSONDecoder().decode(PaginatedMemoriesResponse.self, from: data)
+    public func getMemories(albumId: Int, page: Int, pageSize: Int) async throws -> Shared.PaginatedMemoriesResponse {
+        try await kmpGateway.getMemories(albumId: Int32(albumId), page: Int32(page), pageSize: Int32(pageSize))
     }
 
     public func uploadMemory(
@@ -21,16 +21,14 @@ public struct MemoryGateway: MemoryGatewayProtocol {
         fileData: Data?,
         fileName: String?,
         mimeType: String?
-    ) async throws -> MemoryResponse {
-        let request = MemoryUploadRequest(
-            albumId: albumId,
+    ) async throws -> Shared.MemoryResponse {
+        try await kmpGateway.uploadMemory(
+            albumId: Int32(albumId),
             title: title,
             imageRemoteUrl: imageRemoteUrl,
-            fileData: fileData,
+            fileData: fileData.map { KotlinByteArray.from(data: $0) },
             fileName: fileName,
             mimeType: mimeType
         )
-        let data = try await apiClient.send(request)
-        return try JSONDecoder().decode(MemoryResponse.self, from: data)
     }
 }

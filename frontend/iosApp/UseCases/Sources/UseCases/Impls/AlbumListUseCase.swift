@@ -2,6 +2,7 @@ import Foundation
 import Combine
 import Domains
 import Repositories
+@preconcurrency import Shared
 import APIGateways
 
 public final class AlbumListUseCase: AlbumListUseCaseProtocol, @unchecked Sendable {
@@ -68,11 +69,11 @@ public final class AlbumListUseCase: AlbumListUseCaseProtocol, @unchecked Sendab
         if reachabilityRepository.isConnected {
             do {
                 let response = try await albumGateway.getAlbums(page: 1, pageSize: Const.pageSize)
-                let albums = response.items.map { AlbumMapper.toDomain($0) }
+                let albums = response.items.map { Shared.AlbumMapper.shared.toDomain(response: $0) }
                 try? await albumRepository.syncSet(albums)
                 // Return albums from cache to get preserved localIds
                 let cachedAlbums = await albumRepository.getAll()
-                let hasMore = response.page * response.pageSize < response.total
+                let hasMore = Int(response.page) * Int(response.pageSize) < Int(response.total)
                 return .success(AlbumListUseCaseModel.PageInfo(albums: cachedAlbums, hasMore: hasMore))
             } catch {
                 // Fallback to cache on error
@@ -100,10 +101,10 @@ public final class AlbumListUseCase: AlbumListUseCaseProtocol, @unchecked Sendab
 
         do {
             let response = try await albumGateway.getAlbums(page: page, pageSize: Const.pageSize)
-            let albums = response.items.map { AlbumMapper.toDomain($0) }
+            let albums = response.items.map { Shared.AlbumMapper.shared.toDomain(response: $0) }
             try? await albumRepository.syncAppend(albums)
             let allAlbums = await albumRepository.getAll()
-            let hasMore = response.page * response.pageSize < response.total
+            let hasMore = Int(response.page) * Int(response.pageSize) < Int(response.total)
             return .success(AlbumListUseCaseModel.PageInfo(albums: allAlbums, hasMore: hasMore))
         } catch {
             return .failure(mapNextError(error))

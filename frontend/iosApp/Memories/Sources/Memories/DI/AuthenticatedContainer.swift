@@ -1,10 +1,10 @@
 import Foundation
 import SwiftData
-import APIClients
 import APIGateways
 import Domains
 import Repositories
 import UseCases
+@preconcurrency import Shared
 
 @MainActor
 public final class AuthenticatedContainer {
@@ -30,22 +30,27 @@ public final class AuthenticatedContainer {
         )
     }()
 
-    // MARK: - API
+    // MARK: - KMP API Client
 
-    private lazy var apiClient: AuthenticatedAPIClient = {
-        AuthenticatedAPIClient(apiToken: token, baseURL: AppConfig.baseURL)
+    private lazy var kmpApiClient: Shared.AuthenticatedApiClient = {
+        Shared.AuthenticatedApiClient(baseUrl: AppConfig.baseURL.absoluteString, apiToken: token)
     }()
 
-    private lazy var userGateway: UserGateway = {
-        UserGateway(apiClient: apiClient)
+    // MARK: - KMP Gateways (wrapped with adapters)
+
+    private lazy var userGateway: UserGatewayProtocol = {
+        let kmpGateway = Shared.UserGatewayImpl(apiClient: kmpApiClient)
+        return UserGatewayAdapter(kmpGateway: kmpGateway)
     }()
 
-    private lazy var albumGateway: AlbumGateway = {
-        AlbumGateway(apiClient: apiClient)
+    private lazy var albumGateway: AlbumGatewayProtocol = {
+        let kmpGateway = Shared.AlbumGatewayImpl(apiClient: kmpApiClient)
+        return AlbumGatewayAdapter(kmpGateway: kmpGateway)
     }()
 
-    private lazy var memoryGateway: MemoryGateway = {
-        MemoryGateway(apiClient: apiClient)
+    private lazy var memoryGateway: MemoryGatewayProtocol = {
+        let kmpGateway = Shared.MemoryGatewayImpl(apiClient: kmpApiClient)
+        return MemoryGatewayAdapter(kmpGateway: kmpGateway)
     }()
 
     // MARK: - Repositories
