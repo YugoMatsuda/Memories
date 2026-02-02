@@ -122,6 +122,25 @@ def list_albums(
     )
 
 
+@app.get("/albums/{album_id}", response_model=schemas.AlbumOut)
+def get_album(
+    album_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+):
+    album = (
+        db.query(models.Album)
+        .filter(
+            models.Album.id == album_id,
+            models.Album.owner_id == current_user.id,
+        )
+        .first()
+    )
+    if album is None:
+        raise HTTPException(status_code=404, detail="Album not found")
+    return album
+
+
 @app.post("/albums", response_model=schemas.AlbumOut, status_code=201)
 def create_album(
     payload: schemas.AlbumCreate,
