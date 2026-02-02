@@ -28,8 +28,10 @@ public struct AlbumListView: View {
         .navigationTitle(viewModel.isNetworkDebugMode ? "Memories (Debug)" : "Memories")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                syncButton
+            if viewModel.isNetworkDebugMode {
+                ToolbarItem(placement: .topBarLeading) {
+                    syncButton
+                }
             }
             ToolbarItem(placement: .topBarTrailing) {
                 if let userIcon = viewModel.userIcon {

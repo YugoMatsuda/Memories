@@ -14,7 +14,7 @@ public enum AppConfig {
     // .debug(initialState: true)  - Debug mode, starts online
     // .debug(initialState: false) - Debug mode, starts offline
     // .production                 - Production mode, uses actual network state
-    public static let onlineState: OnlineState = .debug(initialState: true)
+    public static let onlineState: OnlineState = .production
 
     public static let reachabilityRepository: ReachabilityRepositoryProtocol = {
         switch onlineState {
