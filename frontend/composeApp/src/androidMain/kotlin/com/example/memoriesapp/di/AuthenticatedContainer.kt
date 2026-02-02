@@ -30,10 +30,9 @@ import com.example.memoriesapp.usecase.UserProfileUseCaseImpl
 /**
  * DI container for authenticated user session.
  * Contains all use cases that require authentication.
- *
- * Mirrors iOS AuthenticatedContainer structure.
  */
 class AuthenticatedContainer(
+    private val context: android.content.Context,
     private val token: String,
     private val userId: Int,
     private val baseUrl: String,
@@ -45,7 +44,7 @@ class AuthenticatedContainer(
     private val albumRepository = AlbumRepositoryImpl()
     private val memoryRepository = MemoryRepositoryImpl()
     private val syncQueueRepository = SyncQueueRepositoryImpl()
-    private val imageStorageRepository = ImageStorageRepositoryImpl()
+    private val imageStorageRepository = ImageStorageRepositoryImpl(context)
 
     // API Client (authenticated)
     private val apiClient = AuthenticatedApiClient(baseUrl, token)

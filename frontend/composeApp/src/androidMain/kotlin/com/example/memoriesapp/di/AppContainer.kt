@@ -14,14 +14,13 @@ import com.example.memoriesapp.usecase.RootUseCaseImpl
 /**
  * Application-level DI container.
  * Contains shared instances and unauthenticated use cases.
- *
- * Mirrors iOS AppConfig structure.
  */
 class AppContainer(
-    private val baseUrl: String = "http://10.0.2.2:8000" // Android emulator localhost
+    private val context: android.content.Context,
+    val baseUrl: String = "http://10.0.2.2:8000" // Android emulator localhost
 ) {
-    // Shared Repositories (in-memory, no persistence)
-    val authSessionRepository: AuthSessionRepository = AuthSessionRepositoryImpl()
+    // Shared Repositories (with secure persistence)
+    val authSessionRepository: AuthSessionRepository = AuthSessionRepositoryImpl(context)
     val reachabilityRepository: ReachabilityRepository = ReachabilityRepositoryImpl()
 
     // API Client (unauthenticated)
@@ -45,6 +44,7 @@ class AppContainer(
     // Factory for authenticated container
     fun createAuthenticatedContainer(token: String, userId: Int): AuthenticatedContainer {
         return AuthenticatedContainer(
+            context = context,
             token = token,
             userId = userId,
             baseUrl = baseUrl,

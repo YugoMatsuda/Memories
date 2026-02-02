@@ -1,33 +1,44 @@
 package com.example.memoriesapp.data.repository
 
+import android.content.Context
 import com.example.memoriesapp.core.LocalId
 import com.example.memoriesapp.domain.ImageEntityType
 import com.example.memoriesapp.repository.ImageStorageRepository
+import java.io.File
 
 /**
- * In-memory implementation of ImageStorageRepository.
- * No persistence - images are lost on app restart.
+ * File-based implementation of ImageStorageRepository.
+ * Saves images to the app's internal storage.
  */
-class ImageStorageRepositoryImpl : ImageStorageRepository {
-    private val storage = mutableMapOf<String, ByteArray>()
+class ImageStorageRepositoryImpl(
+    private val context: Context
+) : ImageStorageRepository {
 
     override fun save(data: ByteArray, entity: ImageEntityType, localId: LocalId): String {
-        val path = getPath(entity, localId)
-        storage[path] = data
-        return path
+        val file = getFile(entity, localId)
+        file.parentFile?.mkdirs()
+        file.writeBytes(data)
+        return file.absolutePath
     }
 
     override fun get(entity: ImageEntityType, localId: LocalId): ByteArray {
-        val path = getPath(entity, localId)
-        return storage[path] ?: ByteArray(0)
+        val file = getFile(entity, localId)
+        return if (file.exists()) file.readBytes() else ByteArray(0)
     }
 
     override fun delete(entity: ImageEntityType, localId: LocalId) {
-        val path = getPath(entity, localId)
-        storage.remove(path)
+        val file = getFile(entity, localId)
+        if (file.exists()) {
+            file.delete()
+        }
     }
 
     override fun getPath(entity: ImageEntityType, localId: LocalId): String {
-        return "memory://${entity.path}/$localId"
+        return getFile(entity, localId).absolutePath
+    }
+
+    private fun getFile(entity: ImageEntityType, localId: LocalId): File {
+        val dir = File(context.filesDir, "images/${entity.path}")
+        return File(dir, "$localId.jpg")
     }
 }

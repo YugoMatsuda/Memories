@@ -1,13 +1,16 @@
 package com.example.memoriesapp
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.rememberNavController
 import com.example.memoriesapp.di.AppContainer
+import com.example.memoriesapp.ui.uicomponents.components.LocalBaseUrl
 import com.example.memoriesapp.ui.navigation.AppNavGraph
 import com.example.memoriesapp.ui.navigation.Route
 import com.example.memoriesapp.ui.navigation.RootState
@@ -16,10 +19,12 @@ import com.example.memoriesapp.usecase.CheckPreviousSessionResult
 
 /**
  * Main App composable.
- * Manages root state and navigation similar to iOS RootView.
+ * Manages root state and navigation.
  */
 @Composable
-fun App(appContainer: AppContainer = remember { AppContainer() }) {
+fun App() {
+    val context = LocalContext.current
+    val appContainer = remember { AppContainer(context.applicationContext) }
     val navController = rememberNavController()
     var rootState by remember { mutableStateOf<RootState>(RootState.Launching) }
 
@@ -59,21 +64,23 @@ fun App(appContainer: AppContainer = remember { AppContainer() }) {
         }
     }
 
-    MemoriesAppTheme {
-        AppNavGraph(
-            navController = navController,
-            appContainer = appContainer,
-            rootState = rootState,
-            onLoginSuccess = { token, userId ->
-                rootState = RootState.Authenticated(
-                    token = token,
-                    userId = userId,
-                    hasPreviousSession = false
-                )
-            },
-            onLogout = {
-                rootState = RootState.Unauthenticated
-            }
-        )
+    CompositionLocalProvider(LocalBaseUrl provides appContainer.baseUrl) {
+        MemoriesAppTheme {
+            AppNavGraph(
+                navController = navController,
+                appContainer = appContainer,
+                rootState = rootState,
+                onLoginSuccess = { token, userId ->
+                    rootState = RootState.Authenticated(
+                        token = token,
+                        userId = userId,
+                        hasPreviousSession = false
+                    )
+                },
+                onLogout = {
+                    rootState = RootState.Unauthenticated
+                }
+            )
+        }
     }
 }
