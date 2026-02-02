@@ -3,6 +3,7 @@ import SwiftUI
 import Combine
 import UseCases
 import UILogics
+@preconcurrency import Shared
 
 public enum RootViewState: Equatable {
     case launching
@@ -16,8 +17,8 @@ public final class RootViewModel: ObservableObject {
     @Published public var alertItem: AlertItem?
 
     // DeepLink
-    private(set) var pendingDeepLink: UseCases.DeepLink?
-    public let deepLinkSubject = PassthroughSubject<UseCases.DeepLink, Never>()
+    private(set) var pendingDeepLink: Shared.DeepLink?
+    public let deepLinkSubject = PassthroughSubject<Shared.DeepLink, Never>()
 
     private let rootUseCase: RootUseCaseProtocol
     private var cancellables = Set<AnyCancellable>()
@@ -35,9 +36,9 @@ public final class RootViewModel: ObservableObject {
 
     public func initialize() {
         let result = rootUseCase.checkPreviousSession()
-        switch result {
-        case .loggedIn(let session):
-            state = .authenticated(token: session.token, userId: session.userIdInt, hasPreviousSession: true)
+        switch onEnum(of: result) {
+        case .loggedIn(let loggedIn):
+            state = .authenticated(token: loggedIn.session.token, userId: Int(loggedIn.session.userId), hasPreviousSession: true)
         case .notLoggedIn:
             state = .unauthenticated
         }
@@ -50,24 +51,22 @@ public final class RootViewModel: ObservableObject {
     public func handleDeepLink(url: URL) {
         let result = rootUseCase.handleDeepLink(url: url)
 
-        switch result {
-        case .authenticated(let deepLink):
+        switch onEnum(of: result) {
+        case .authenticated(let authenticated):
             if case .authenticated = state {
                 // Warm Start: Router already exists
-                deepLinkSubject.send(deepLink)
+                deepLinkSubject.send(authenticated.deepLink)
             } else {
                 // Cold Start: Waiting for Container creation
-                pendingDeepLink = deepLink
+                pendingDeepLink = authenticated.deepLink
             }
-
-        case .notAuthenticated(let deepLink):
-            pendingDeepLink = deepLink
+        case .notAuthenticated(let notAuthenticated):
+            pendingDeepLink = notAuthenticated.deepLink
             alertItem = AlertItem(
                 title: "Login Required",
                 message: "Please log in to view this content.",
                 buttons: [.default(Text("OK"))]
             )
-
         case .invalidURL:
             alertItem = AlertItem(
                 title: "Invalid Link",
@@ -77,7 +76,7 @@ public final class RootViewModel: ObservableObject {
         }
     }
 
-    public func consumePendingDeepLink() -> UseCases.DeepLink? {
+    public func consumePendingDeepLink() -> Shared.DeepLink? {
         defer { pendingDeepLink = nil }
         return pendingDeepLink
     }

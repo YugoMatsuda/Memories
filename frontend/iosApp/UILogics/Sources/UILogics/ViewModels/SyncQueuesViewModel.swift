@@ -2,6 +2,7 @@ import Foundation
 import Combine
 import Domains
 import UseCases
+@preconcurrency import Shared
 
 @MainActor
 public final class SyncQueuesViewModel: ObservableObject {
@@ -49,7 +50,7 @@ extension SyncQueuesViewModel {
         public let serverId: String?
         public let createdAt: String
 
-        public init(from item: UseCases.SyncQueueItem) {
+        public init(from item: Shared.SyncQueueItem) {
             let operation = item.operation
             self.id = operation.idUUID
             self.entityType = Self.mapEntityType(operation.entityType)
@@ -58,7 +59,7 @@ extension SyncQueuesViewModel {
             self.errorMessage = operation.errorMessage
             self.entityTitle = item.entityTitle
             self.localId = String(operation.localIdUUID.uuidString.prefix(8)).lowercased()
-            self.serverId = item.entityServerId.map { String($0) }
+            self.serverId = item.entityServerId.map { String($0.intValue) }
             self.createdAt = Self.formatDate(operation.createdAtDate)
         }
 

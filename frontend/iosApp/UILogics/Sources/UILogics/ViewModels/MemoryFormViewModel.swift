@@ -2,6 +2,7 @@ import Foundation
 import SwiftUI
 import Domains
 import UseCases
+@preconcurrency import Shared
 
 @MainActor
 public final class MemoryFormViewModel: ObservableObject {
@@ -55,15 +56,15 @@ public final class MemoryFormViewModel: ObservableObject {
         )
         isSaving = false
 
-        switch result {
+        switch onEnum(of: result) {
         case .success, .successPendingSync:
             router.dismissSheet()
-        case .failure(let error):
-            showAlert(for: error)
+        case .failure(let failure):
+            showAlert(for: failure.error)
         }
     }
 
-    private func showAlert(for error: MemoryFormUseCaseModel.CreateResult.Error) {
+    private func showAlert(for error: Shared.MemoryCreateError) {
         let message: String
         switch error {
         case .networkError:
@@ -72,7 +73,7 @@ public final class MemoryFormViewModel: ObservableObject {
             message = "Failed to save image. Please try again."
         case .databaseError:
             message = "Failed to save memory. Please try again."
-        case .unknown:
+        default:
             message = "An unexpected error occurred. Please try again."
         }
 

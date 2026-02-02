@@ -3,6 +3,7 @@ import SwiftUI
 import Combine
 import Domains
 import UseCases
+@preconcurrency import Shared
 
 @MainActor
 public final class UserProfileViewModel: ObservableObject {
@@ -67,9 +68,9 @@ public final class UserProfileViewModel: ObservableObject {
 
         isSaving = false
 
-        switch result {
-        case .success(let updatedUser):
-            uiModel.avatarUrl = updatedUser.displayAvatarURL
+        switch onEnum(of: result) {
+        case .success(let success):
+            uiModel.avatarUrl = success.user.displayAvatarURL
             pendingAvatarImage = nil
             selectedImage = nil
             alertItem = AlertItem(
@@ -77,8 +78,8 @@ public final class UserProfileViewModel: ObservableObject {
                 message: "Your profile has been updated.",
                 buttons: [Alert.Button.default(Text("OK"))]
             )
-        case .successPendingSync(let updatedUser):
-            uiModel.avatarUrl = updatedUser.displayAvatarURL
+        case .successPendingSync(let pendingSync):
+            uiModel.avatarUrl = pendingSync.user.displayAvatarURL
             pendingAvatarImage = nil
             selectedImage = nil
             alertItem = AlertItem(
@@ -86,12 +87,12 @@ public final class UserProfileViewModel: ObservableObject {
                 message: "Your profile has been saved locally and will sync when online.",
                 buttons: [Alert.Button.default(Text("OK"))]
             )
-        case .failure(let error):
-            showAlert(for: error)
+        case .failure(let failure):
+            showAlert(for: failure.error)
         }
     }
 
-    private func showAlert(for error: UserProfileUseCaseModel.UpdateProfileResult.Error) {
+    private func showAlert(for error: Shared.UpdateProfileError) {
         let message: String
         switch error {
         case .networkError:
@@ -102,7 +103,7 @@ public final class UserProfileViewModel: ObservableObject {
             message = "Failed to save the image locally. Please try again."
         case .databaseError:
             message = "Failed to save to local database. Please try again."
-        case .unknown:
+        default:
             message = "An unexpected error occurred. Please try again."
         }
 

@@ -2,7 +2,15 @@ import Foundation
 import Domains
 @preconcurrency import Shared
 
-/// Adapter that wraps KMP SplashUseCase to conform to Swift SplashUseCaseProtocol
+// MARK: - Protocol
+
+public protocol SplashUseCaseProtocol: Sendable {
+    func launchApp() async -> Shared.LaunchAppResult
+    func clearSession()
+}
+
+// MARK: - Adapter
+
 public final class SplashUseCaseAdapter: SplashUseCaseProtocol, @unchecked Sendable {
     private let kmpUseCase: Shared.SplashUseCase
 
@@ -10,31 +18,15 @@ public final class SplashUseCaseAdapter: SplashUseCaseProtocol, @unchecked Senda
         self.kmpUseCase = kmpUseCase
     }
 
-    public func launchApp() async -> SplashUseCaseModel.LaunchAppResult {
+    public func launchApp() async -> Shared.LaunchAppResult {
         do {
-            let result = try await kmpUseCase.launchApp()
-            if let success = result as? Shared.LaunchAppResult.Success {
-                return .success(success.user)
-            } else if let failure = result as? Shared.LaunchAppResult.Failure {
-                return .failure(mapLaunchAppError(failure.error))
-            }
-            return .failure(.unknown)
+            return try await kmpUseCase.launchApp()
         } catch {
-            return .failure(.unknown)
+            return Shared.LaunchAppResult.Failure(error: .unknown)
         }
     }
 
     public func clearSession() {
         kmpUseCase.clearSession()
-    }
-
-    private func mapLaunchAppError(_ error: Shared.LaunchAppError) -> SplashUseCaseModel.LaunchAppResult.Error {
-        switch error {
-        case .sessionExpired: return .sessionExpired
-        case .networkError: return .networkError
-        case .serverError: return .serverError
-        case .offlineNoCache: return .offlineNoCache
-        default: return .unknown
-        }
     }
 }

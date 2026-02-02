@@ -5,6 +5,7 @@ import Domains
 import UILogics
 import UIComponents
 import UseCases
+@preconcurrency import Shared
 
 @MainActor
 public final class AuthenticatedRouter: AuthenticatedRouterProtocol, ObservableObject {
@@ -14,8 +15,8 @@ public final class AuthenticatedRouter: AuthenticatedRouterProtocol, ObservableO
     private var cancellables = Set<AnyCancellable>()
 
     public init(
-        pendingDeepLink: UseCases.DeepLink?,
-        deepLinkPublisher: AnyPublisher<UseCases.DeepLink, Never>
+        pendingDeepLink: Shared.DeepLink?,
+        deepLinkPublisher: AnyPublisher<Shared.DeepLink, Never>
     ) {
         // Cold Start: process pending deep link
         if let deepLink = pendingDeepLink {
@@ -31,11 +32,11 @@ public final class AuthenticatedRouter: AuthenticatedRouterProtocol, ObservableO
             .store(in: &cancellables)
     }
 
-    private func handleDeepLink(_ deepLink: UseCases.DeepLink) {
-        switch deepLink {
-        case .album(let albumId):
+    private func handleDeepLink(_ deepLink: Shared.DeepLink) {
+        switch onEnum(of: deepLink) {
+        case .album(let album):
             path = NavigationPath()
-            path.append(AuthenticatedRoute.albumDetail(.deepLink(id: albumId)))
+            path.append(AuthenticatedRoute.albumDetail(.deepLink(id: Int(album.albumId))))
         }
     }
 

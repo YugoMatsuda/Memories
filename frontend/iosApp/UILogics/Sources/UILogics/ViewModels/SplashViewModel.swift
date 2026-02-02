@@ -1,6 +1,7 @@
 import Foundation
 import Domains
 import UseCases
+@preconcurrency import Shared
 
 @MainActor
 public final class SplashViewModel: ObservableObject {
@@ -22,15 +23,15 @@ public final class SplashViewModel: ObservableObject {
 
         let result = await splashUseCase.launchApp()
 
-        switch result {
-        case .success(let user):
-            onSuccess(user)
-        case .failure(let error):
-            handleError(error)
+        switch onEnum(of: result) {
+        case .success(let success):
+            onSuccess(success.user)
+        case .failure(let failure):
+            handleError(failure.error)
         }
     }
 
-    private func handleError(_ error: SplashUseCaseModel.LaunchAppResult.Error) {
+    private func handleError(_ error: Shared.LaunchAppError) {
         switch error {
         case .sessionExpired:
             state = .error(.init(
@@ -72,7 +73,7 @@ public final class SplashViewModel: ObservableObject {
                     Task { await self?.launchApp() }
                 }
             ))
-        case .unknown:
+        default:
             state = .error(.init(
                 icon: "exclamationmark.triangle",
                 iconColor: .orange,

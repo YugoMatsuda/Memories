@@ -1,15 +1,15 @@
 import Foundation
 import Combine
 import Domains
-import Repositories
 import UseCases
 import Utilities
+@preconcurrency import Shared
 
 @MainActor
 public final class AlbumListViewModel: ObservableObject {
     @Published public private(set) var userIcon: UserIconUIModel?
     @Published public private(set) var displayResult: DisplayResult = .loading
-    @Published public private(set) var syncState: Repositories.SyncQueueState = Repositories.SyncQueueState(pendingCount: 0, isSyncing: false)
+    @Published public private(set) var syncState: Shared.SyncQueueState = Shared.SyncQueueState(pendingCount: 0, isSyncing: false)
     @Published public private(set) var isOnline: Bool = true
 
     public let isNetworkDebugMode: Bool
@@ -45,7 +45,6 @@ public final class AlbumListViewModel: ObservableObject {
         albumListUseCase.observeAlbumChange()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] event in
-                print("[AlbumListViewModel] sink received event: \(event)")
                 self?.handleLocalChange(event)
             }
             .store(in: &cancellables)
@@ -53,7 +52,6 @@ public final class AlbumListViewModel: ObservableObject {
         albumListUseCase.observeSync()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] state in
-                print("[AlbumListViewModel] sync state received: pendingCount=\(state.pendingCount), isSyncing=\(state.isSyncing)")
                 self?.syncState = state
             }
             .store(in: &cancellables)
@@ -70,21 +68,17 @@ public final class AlbumListViewModel: ObservableObject {
         albumListUseCase.toggleOnlineState()
     }
 
-    private func handleLocalChange(_ event: Repositories.LocalAlbumChangeEvent) {
-        print("[AlbumListViewModel] handleLocalChange called: \(event)")
-        guard case .success(let currentData) = displayResult else {
-            print("[AlbumListViewModel] displayResult is not .success, ignoring event")
-            return
-        }
+    private func handleLocalChange(_ event: Shared.LocalAlbumChangeEvent) {
+        guard case .success(let currentData) = displayResult else { return }
 
         var albums = currentData.albums
 
-        switch event {
-        case .created(let album):
-            albums.insert(album, at: 0)
-        case .updated(let album):
-            if let index = albums.firstIndex(where: { $0.localId == album.localId }) {
-                albums[index] = album
+        switch onEnum(of: event) {
+        case .created(let created):
+            albums.insert(created.album, at: 0)
+        case .updated(let updated):
+            if let index = albums.firstIndex(where: { $0.localId == updated.album.localId }) {
+                albums[index] = updated.album
             }
         }
 
@@ -128,11 +122,11 @@ public final class AlbumListViewModel: ObservableObject {
         displayResult = .loading
         let result = await albumListUseCase.display()
 
-        switch result {
-        case .success(let pageInfo):
-            displayResult = .success(makeListData(albums: pageInfo.albums, currentPage: 1, hasMore: pageInfo.hasMore))
-        case .failure(let error):
-            displayResult = .failure(mapDisplayError(error))
+        switch onEnum(of: result) {
+        case .success(let success):
+            displayResult = .success(makeListData(albums: success.pageInfo.albums, currentPage: 1, hasMore: success.pageInfo.hasMore))
+        case .failure(let failure):
+            displayResult = .failure(mapDisplayError(failure.error))
         }
     }
 
@@ -143,12 +137,12 @@ public final class AlbumListViewModel: ObservableObject {
         let nextPage = currentData.currentPage + 1
         let result = await albumListUseCase.next(page: nextPage)
 
-        switch result {
-        case .success(let pageInfo):
-            displayResult = .success(makeListData(albums: pageInfo.albums, currentPage: nextPage, hasMore: pageInfo.hasMore))
+        switch onEnum(of: result) {
+        case .success(let success):
+            displayResult = .success(makeListData(albums: success.pageInfo.albums, currentPage: nextPage, hasMore: success.pageInfo.hasMore))
 
             // If data didn't increase but hasMore is true, fetch next page automatically
-            if pageInfo.albums.count == previousCount && pageInfo.hasMore {
+            if success.pageInfo.albums.count == previousCount && success.pageInfo.hasMore {
                 await loadMore()
             } else {
                 isLoadingMore = false
@@ -173,7 +167,7 @@ public final class AlbumListViewModel: ObservableObject {
         return ListData(albums: albums, items: items, currentPage: currentPage, hasMore: hasMore)
     }
 
-    private func mapDisplayError(_ error: AlbumListUseCaseModel.DisplayResult.Error) -> ErrorUIModel {
+    private func mapDisplayError(_ error: Shared.AlbumDisplayError) -> ErrorUIModel {
         switch error {
         case .networkError:
             return ErrorUIModel(
@@ -189,7 +183,7 @@ public final class AlbumListViewModel: ObservableObject {
                     Task { await self?.display() }
                 }
             )
-        case .unknown:
+        default:
             return ErrorUIModel(
                 message: "An unexpected error occurred.",
                 retryAction: { [weak self] in

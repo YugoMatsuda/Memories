@@ -1,6 +1,7 @@
 import Foundation
 import Domains
 import UseCases
+@preconcurrency import Shared
 
 @MainActor
 public final class LoginViewModel: ObservableObject {
@@ -31,16 +32,16 @@ public final class LoginViewModel: ObservableObject {
             password: password
         )
 
-        switch result {
-        case .success(let session):
+        switch onEnum(of: result) {
+        case .success(let success):
             loginState = .idle
-            onSuccess(session)
-        case .failure(let error):
-            loginState = .error(message: errorMessage(for: error))
+            onSuccess(success.session)
+        case .failure(let failure):
+            loginState = .error(message: errorMessage(for: failure.error))
         }
     }
 
-    private func errorMessage(for error: LoginUseCaseModel.LoginResult.Error) -> String {
+    private func errorMessage(for error: Shared.LoginError) -> String {
         switch error {
         case .invalidCredentials:
             return "Invalid username or password"
@@ -48,7 +49,7 @@ public final class LoginViewModel: ObservableObject {
             return "Network error"
         case .serverError:
             return "Server error"
-        case .unknown:
+        default:
             return "Unknown error"
         }
     }

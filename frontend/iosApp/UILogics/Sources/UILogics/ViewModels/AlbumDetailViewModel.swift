@@ -1,9 +1,9 @@
 import Foundation
 import Combine
 import Domains
-import Repositories
 import UseCases
 import Utilities
+@preconcurrency import Shared
 
 @MainActor
 public final class AlbumDetailViewModel: ObservableObject {
@@ -64,17 +64,16 @@ public final class AlbumDetailViewModel: ObservableObject {
 
         let result = await albumDetailUseCase.resolveAlbum(serverId: serverId)
 
-        switch result {
-        case .success(let album):
-            self.album = album
+        switch onEnum(of: result) {
+        case .success(let success):
+            self.album = success.album
             await display()
-
-        case .failure(let error):
-            displayResult = .failure(mapResolveError(error))
+        case .failure(let failure):
+            displayResult = .failure(mapResolveError(failure.error))
         }
     }
 
-    private func mapResolveError(_ error: AlbumDetailUseCaseModel.ResolveAlbumResult.Error) -> ErrorUIModel {
+    private func mapResolveError(_ error: Shared.ResolveAlbumError) -> ErrorUIModel {
         switch error {
         case .notFound:
             return ErrorUIModel(
@@ -92,6 +91,14 @@ public final class AlbumDetailViewModel: ObservableObject {
         case .offlineUnavailable:
             return ErrorUIModel(
                 message: "This album is not available offline.",
+                retryAction: { [weak self] in
+                    guard case .deepLink(let serverId) = self?.origin else { return }
+                    Task { await self?.resolveAlbumAndDisplay(serverId: serverId) }
+                }
+            )
+        default:
+            return ErrorUIModel(
+                message: "An unexpected error occurred.",
                 retryAction: { [weak self] in
                     guard case .deepLink(let serverId) = self?.origin else { return }
                     Task { await self?.resolveAlbumAndDisplay(serverId: serverId) }
@@ -125,11 +132,11 @@ public final class AlbumDetailViewModel: ObservableObject {
         displayResult = .loading
         let result = await albumDetailUseCase.display(album: album)
 
-        switch result {
-        case .success(let pageInfo):
-            displayResult = .success(makeListData(memories: pageInfo.memories, currentPage: 1, hasMore: pageInfo.hasMore))
-        case .failure(let error):
-            displayResult = .failure(mapDisplayError(error))
+        switch onEnum(of: result) {
+        case .success(let success):
+            displayResult = .success(makeListData(memories: success.pageInfo.memories, currentPage: 1, hasMore: success.pageInfo.hasMore))
+        case .failure(let failure):
+            displayResult = .failure(mapDisplayError(failure.error))
         }
     }
 
@@ -140,12 +147,12 @@ public final class AlbumDetailViewModel: ObservableObject {
         let nextPage = currentData.currentPage + 1
         let result = await albumDetailUseCase.next(album: album, page: nextPage)
 
-        switch result {
-        case .success(let pageInfo):
-            displayResult = .success(makeListData(memories: pageInfo.memories, currentPage: nextPage, hasMore: pageInfo.hasMore))
+        switch onEnum(of: result) {
+        case .success(let success):
+            displayResult = .success(makeListData(memories: success.pageInfo.memories, currentPage: nextPage, hasMore: success.pageInfo.hasMore))
 
             // If data didn't increase but hasMore is true, fetch next page automatically
-            if pageInfo.memories.count == previousCount && pageInfo.hasMore {
+            if success.pageInfo.memories.count == previousCount && success.pageInfo.hasMore {
                 await loadMore()
             } else {
                 isLoadingMore = false
@@ -155,25 +162,25 @@ public final class AlbumDetailViewModel: ObservableObject {
         }
     }
 
-    private func handleLocalChange(_ event: Repositories.LocalMemoryChangeEvent) {
+    private func handleLocalChange(_ event: Shared.LocalMemoryChangeEvent) {
         guard let album, case .success(let currentData) = displayResult else { return }
 
-        switch event {
-        case .created(let memory):
-            guard memory.albumLocalId == album.localId else { return }
+        switch onEnum(of: event) {
+        case .created(let created):
+            guard created.memory.albumLocalId == album.localId else { return }
             var memories = currentData.memories
-            memories.insert(memory, at: 0)
+            memories.insert(created.memory, at: 0)
             displayResult = .success(makeListData(memories: memories, currentPage: currentData.currentPage, hasMore: currentData.hasMore))
         }
     }
 
-    private func handleAlbumChange(_ event: Repositories.LocalAlbumChangeEvent) {
-        switch event {
+    private func handleAlbumChange(_ event: Shared.LocalAlbumChangeEvent) {
+        switch onEnum(of: event) {
         case .created:
             break
-        case .updated(let updatedAlbum):
-            guard let album, updatedAlbum.localId == album.localId else { return }
-            self.album = updatedAlbum
+        case .updated(let updated):
+            guard let album, updated.album.localId == album.localId else { return }
+            self.album = updated.album
         }
     }
 
@@ -201,7 +208,7 @@ public final class AlbumDetailViewModel: ObservableObject {
         viewerMemoryId = nil
     }
 
-    private func mapDisplayError(_ error: AlbumDetailUseCaseModel.DisplayResult.Error) -> ErrorUIModel {
+    private func mapDisplayError(_ error: Shared.MemoryDisplayError) -> ErrorUIModel {
         switch error {
         case .offline:
             return ErrorUIModel(
@@ -217,7 +224,7 @@ public final class AlbumDetailViewModel: ObservableObject {
                     Task { await self?.display() }
                 }
             )
-        case .unknown:
+        default:
             return ErrorUIModel(
                 message: "An unexpected error occurred.",
                 retryAction: { [weak self] in

@@ -2,6 +2,7 @@ import Foundation
 import SwiftUI
 import Domains
 import UseCases
+@preconcurrency import Shared
 
 @MainActor
 public final class AlbumFormViewModel: ObservableObject {
@@ -90,11 +91,11 @@ public final class AlbumFormViewModel: ObservableObject {
             coverImageData: imageData
         )
 
-        switch result {
+        switch onEnum(of: result) {
         case .success, .successPendingSync:
             router.dismissSheet()
-        case .failure(let error):
-            showAlert(for: error)
+        case .failure(let failure):
+            showAlert(for: failure.error)
         }
     }
 
@@ -105,15 +106,15 @@ public final class AlbumFormViewModel: ObservableObject {
             coverImageData: imageData
         )
 
-        switch result {
+        switch onEnum(of: result) {
         case .success, .successPendingSync:
             router.dismissSheet()
-        case .failure(let error):
-            showAlert(for: error)
+        case .failure(let failure):
+            showAlert(for: failure.error)
         }
     }
 
-    private func showAlert(for error: AlbumFormUseCaseModel.CreateResult.Error) {
+    private func showAlert(for error: Shared.AlbumCreateError) {
         let message: String
         switch error {
         case .networkError:
@@ -124,7 +125,7 @@ public final class AlbumFormViewModel: ObservableObject {
             message = "Failed to save the image locally. Please try again."
         case .databaseError:
             message = "Failed to save to local database. Please try again."
-        case .unknown:
+        default:
             message = "An unexpected error occurred. Please try again."
         }
 
@@ -135,7 +136,7 @@ public final class AlbumFormViewModel: ObservableObject {
         )
     }
 
-    private func showAlert(for error: AlbumFormUseCaseModel.UpdateResult.Error) {
+    private func showAlert(for error: Shared.AlbumUpdateError) {
         let message: String
         switch error {
         case .networkError:
@@ -148,7 +149,7 @@ public final class AlbumFormViewModel: ObservableObject {
             message = "Failed to save the image locally. Please try again."
         case .databaseError:
             message = "Failed to save to local database. Please try again."
-        case .unknown:
+        default:
             message = "An unexpected error occurred. Please try again."
         }
 

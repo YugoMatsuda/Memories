@@ -43,7 +43,6 @@ extension Shared.ImageEntityType {
         case .albumCover: return .albumCover
         case .memory: return .memory
         case .avatar: return .avatar
-        default: return .memory
         }
     }
 }

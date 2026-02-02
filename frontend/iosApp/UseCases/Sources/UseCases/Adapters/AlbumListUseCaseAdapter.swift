@@ -2,9 +2,23 @@ import Foundation
 import Combine
 import Domains
 import Repositories
+import Utilities
 @preconcurrency import Shared
 
-/// Adapter that wraps KMP AlbumListUseCase to conform to Swift AlbumListUseCaseProtocol
+// MARK: - Protocol
+
+public protocol AlbumListUseCaseProtocol: Sendable {
+    func observeUser() -> AnyPublisher<User, Never>
+    func observeAlbumChange() -> AnyPublisher<Shared.LocalAlbumChangeEvent, Never>
+    func observeSync() -> AnyPublisher<Shared.SyncQueueState, Never>
+    func observeOnlineState() -> AnyPublisher<Bool, Never>
+    func display() async -> Shared.AlbumDisplayResult
+    func next(page: Int) async -> Shared.AlbumNextResult
+    func toggleOnlineState()
+}
+
+// MARK: - Adapter
+
 public final class AlbumListUseCaseAdapter: AlbumListUseCaseProtocol, @unchecked Sendable {
     private let kmpUseCase: Shared.AlbumListUseCase
     private let reachabilityRepository: ReachabilityRepositoryProtocol
@@ -23,30 +37,12 @@ public final class AlbumListUseCaseAdapter: AlbumListUseCaseProtocol, @unchecked
         kmpUseCase.observeUser().asPublisher()
     }
 
-    public func observeAlbumChange() -> AnyPublisher<Repositories.LocalAlbumChangeEvent, Never> {
-        kmpUseCase.observeAlbumChange()
-            .asPublisher()
-            .compactMap { kmpEvent -> Repositories.LocalAlbumChangeEvent? in
-                if let created = kmpEvent as? Shared.LocalAlbumChangeEvent.Created {
-                    return .created(created.album)
-                } else if let updated = kmpEvent as? Shared.LocalAlbumChangeEvent.Updated {
-                    return .updated(updated.album)
-                }
-                return nil
-            }
-            .eraseToAnyPublisher()
+    public func observeAlbumChange() -> AnyPublisher<Shared.LocalAlbumChangeEvent, Never> {
+        kmpUseCase.observeAlbumChange().asPublisher()
     }
 
-    public func observeSync() -> AnyPublisher<Repositories.SyncQueueState, Never> {
-        kmpUseCase.observeSync()
-            .asPublisher()
-            .map { kmpState in
-                Repositories.SyncQueueState(
-                    pendingCount: Int(kmpState.pendingCount),
-                    isSyncing: kmpState.isSyncing
-                )
-            }
-            .eraseToAnyPublisher()
+    public func observeSync() -> AnyPublisher<Shared.SyncQueueState, Never> {
+        kmpUseCase.observeSync().asPublisher()
     }
 
     public func observeOnlineState() -> AnyPublisher<Bool, Never> {
@@ -56,41 +52,21 @@ public final class AlbumListUseCaseAdapter: AlbumListUseCaseProtocol, @unchecked
             .eraseToAnyPublisher()
     }
 
-    // MARK: - Actions (delegated to KMP UseCase)
+    // MARK: - Actions
 
-    public func display() async -> AlbumListUseCaseModel.DisplayResult {
+    public func display() async -> Shared.AlbumDisplayResult {
         do {
-            let result = try await kmpUseCase.display()
-            if let success = result as? Shared.AlbumDisplayResult.Success {
-                let pageInfo = AlbumListUseCaseModel.PageInfo(
-                    albums: success.pageInfo.albums,
-                    hasMore: success.pageInfo.hasMore
-                )
-                return .success(pageInfo)
-            } else if let failure = result as? Shared.AlbumDisplayResult.Failure {
-                return .failure(mapDisplayError(failure.error))
-            }
-            return .failure(.unknown)
+            return try await kmpUseCase.display()
         } catch {
-            return .failure(.unknown)
+            return Shared.AlbumDisplayResult.Failure(error: .unknown)
         }
     }
 
-    public func next(page: Int) async -> AlbumListUseCaseModel.NextResult {
+    public func next(page: Int) async -> Shared.AlbumNextResult {
         do {
-            let result = try await kmpUseCase.next(page: Int32(page))
-            if let success = result as? Shared.AlbumNextResult.Success {
-                let pageInfo = AlbumListUseCaseModel.PageInfo(
-                    albums: success.pageInfo.albums,
-                    hasMore: success.pageInfo.hasMore
-                )
-                return .success(pageInfo)
-            } else if let failure = result as? Shared.AlbumNextResult.Failure {
-                return .failure(mapNextError(failure.error))
-            }
-            return .failure(.unknown)
+            return try await kmpUseCase.next(page: Int32(page))
         } catch {
-            return .failure(.unknown)
+            return Shared.AlbumNextResult.Failure(error: .unknown)
         }
     }
 
@@ -99,23 +75,5 @@ public final class AlbumListUseCaseAdapter: AlbumListUseCaseProtocol, @unchecked
             fatalError("toggleOnlineState can only be called with DebugReachabilityRepository")
         }
         debugRepository.setOnline(!debugRepository.isConnected)
-    }
-
-    // MARK: - Error Mapping
-
-    private func mapDisplayError(_ error: Shared.AlbumDisplayError) -> AlbumListUseCaseModel.DisplayResult.Error {
-        switch error {
-        case .networkError: return .networkError
-        case .offline: return .offline
-        default: return .unknown
-        }
-    }
-
-    private func mapNextError(_ error: Shared.AlbumNextError) -> AlbumListUseCaseModel.NextResult.Error {
-        switch error {
-        case .networkError: return .networkError
-        case .offline: return .offline
-        default: return .unknown
-        }
     }
 }
