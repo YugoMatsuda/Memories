@@ -5,6 +5,7 @@ package com.example.memoriesapp.ui.navigation
  */
 sealed class Route(val route: String) {
     data object Login : Route("login")
+    data object ContinueAs : Route("continue-as")
     data object Splash : Route("splash")
     data object AlbumList : Route("albums")
     data object AlbumDetail : Route("albums/{albumLocalId}") {
