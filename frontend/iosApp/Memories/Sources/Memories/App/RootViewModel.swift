@@ -53,10 +53,10 @@ public final class RootViewModel: ObservableObject {
         switch result {
         case .authenticated(let deepLink):
             if case .authenticated = state {
-                // Warm Start: Routerが既に存在
+                // Warm Start: Router already exists
                 deepLinkSubject.send(deepLink)
             } else {
-                // Cold Start: Container生成待ち
+                // Cold Start: Waiting for Container creation
                 pendingDeepLink = deepLink
             }
 

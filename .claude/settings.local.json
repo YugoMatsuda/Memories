@@ -16,7 +16,8 @@
       "Bash(git filter-branch:*)",
       "Bash(git stash:*)",
       "Bash(ls:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(grep:*)"
     ]
   }
 }
