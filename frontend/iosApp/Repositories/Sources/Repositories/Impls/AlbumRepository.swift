@@ -66,11 +66,11 @@ public final class AlbumRepository: AlbumRepositoryProtocol, @unchecked Sendable
             // Preserve existing localId if album exists (lookup by serverId)
             var albumToSave = album
             if let serverId = album.id, let existing = existingByServerId[serverId] {
-                albumToSave = album.with(localId: existing.localId)
+                albumToSave = album.with(localId: existing.localIdUUID)
             }
 
             // Upsert by localId
-            let targetLocalId = albumToSave.localId
+            let targetLocalId = albumToSave.localId.uuid
             try await database.upsert(
                 albumToSave,
                 as: LocalAlbum.self,
@@ -91,11 +91,11 @@ public final class AlbumRepository: AlbumRepositoryProtocol, @unchecked Sendable
             // Preserve existing localId if album exists (lookup by serverId)
             var albumToSave = album
             if let serverId = album.id, let existing = existingByServerId[serverId] {
-                albumToSave = album.with(localId: existing.localId)
+                albumToSave = album.with(localId: existing.localIdUUID)
             }
 
             // Upsert by localId
-            let targetLocalId = albumToSave.localId
+            let targetLocalId = albumToSave.localId.uuid
             try await database.upsert(
                 albumToSave,
                 as: LocalAlbum.self,
@@ -112,7 +112,7 @@ public final class AlbumRepository: AlbumRepositoryProtocol, @unchecked Sendable
     }
 
     public func update(_ album: Album) async throws {
-        let targetLocalId = album.localId
+        let targetLocalId = album.localId.uuid
         try await database.upsert(
             album,
             as: LocalAlbum.self,
@@ -131,21 +131,21 @@ public final class AlbumRepository: AlbumRepositoryProtocol, @unchecked Sendable
     // MARK: - Sync Status
 
     public func markAsSynced(localId: UUID, serverId: Int) async throws {
-        guard var album = await get(byLocalId: localId) else { return }
-        album = album.with(id: serverId, syncStatus: .synced)
-        try await update(album)
+        guard let album = await get(byLocalId: localId) else { return }
+        let updatedAlbum = album.with(serverId: .some(serverId), syncStatus: .synced)
+        try await update(updatedAlbum)
     }
 
     public func updateCoverImageUrl(localId: UUID, url: String) async throws {
-        guard var album = await get(byLocalId: localId) else { return }
-        album = album.with(coverImageUrl: URL(string: url))
-        try await updateSilently(album)
+        guard let album = await get(byLocalId: localId) else { return }
+        let updatedAlbum = album.with(coverImageUrl: .some(URL(string: url)))
+        try await updateSilently(updatedAlbum)
     }
 
     // MARK: - Private
 
     private func updateSilently(_ album: Album) async throws {
-        let targetLocalId = album.localId
+        let targetLocalId = album.localId.uuid
         try await database.upsert(
             album,
             as: LocalAlbum.self,

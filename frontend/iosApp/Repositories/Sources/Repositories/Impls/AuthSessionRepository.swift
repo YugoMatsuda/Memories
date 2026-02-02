@@ -14,7 +14,7 @@ public final class AuthSessionRepository: AuthSessionRepositoryProtocol, @unchec
               let userId = Int(userIdString) else {
             return nil
         }
-        let session = AuthSession(token: token, userId: userId)
+        let session = AuthSession.create(token: token, userId: userId)
         sessionSubject.send(session)
         return session
     }

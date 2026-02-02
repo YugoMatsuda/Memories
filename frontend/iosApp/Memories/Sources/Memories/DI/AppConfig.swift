@@ -1,8 +1,7 @@
 import Foundation
-import APIClients
-import APIGateways
 import Repositories
 import UseCases
+@preconcurrency import Shared
 
 public enum OnlineState: Sendable {
     case debug(initialState: Bool)
@@ -25,14 +24,26 @@ public enum AppConfig {
         }
     }()
 
-    // Shared instances
-    public static let publicAPIClient = PublicAPIClient(baseURL: baseURL)
-    public static let authGateway = AuthGateway(apiClient: publicAPIClient)
+    // Shared instances - KMP API Client
+    public static let kmpPublicApiClient = Shared.PublicApiClient(baseUrl: baseURL.absoluteString)
+    public static let kmpAuthGateway = Shared.AuthGatewayImpl(apiClient: kmpPublicApiClient)
     public static let authSessionRepository = AuthSessionRepository()
 
-    public static let rootUseCase = RootUseCase(authSessionRepository: authSessionRepository)
-    public static let loginUseCase = LoginUseCase(
-        authGateway: authGateway,
-        authSessionRepository: authSessionRepository
-    )
+    // KMP AuthSessionRepository Bridge
+    private static let authSessionRepositoryBridge = AuthSessionRepositoryBridgeImpl(repository: authSessionRepository)
+    private static let kmpAuthSessionRepository = Shared.AuthSessionRepositoryImpl(bridge: authSessionRepositoryBridge)
+
+    // KMP UseCases
+    public static let rootUseCase: RootUseCaseProtocol = {
+        let kmpUseCase = Shared.RootUseCaseImpl(authSessionRepository: kmpAuthSessionRepository)
+        return RootUseCaseAdapter(kmpUseCase: kmpUseCase)
+    }()
+
+    public static let loginUseCase: LoginUseCaseProtocol = {
+        let kmpUseCase = Shared.LoginUseCaseImpl(
+            authGateway: kmpAuthGateway,
+            authSessionRepository: kmpAuthSessionRepository
+        )
+        return LoginUseCaseAdapter(kmpUseCase: kmpUseCase)
+    }()
 }

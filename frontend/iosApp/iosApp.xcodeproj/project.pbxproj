@@ -14,8 +14,6 @@
 		627E57BD9FB2613EECD493CF /* MemoriesApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MemoriesApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		PKGREF001 /* Memories */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = Memories; sourceTree = SOURCE_ROOT; };
 		PKGREF002 /* Domains */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = Domains; sourceTree = SOURCE_ROOT; };
-		PKGREF003 /* APIClients */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = APIClients; sourceTree = SOURCE_ROOT; };
-		PKGREF004 /* APIGateways */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = APIGateways; sourceTree = SOURCE_ROOT; };
 		PKGREF005 /* Repositories */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = Repositories; sourceTree = SOURCE_ROOT; };
 		PKGREF006 /* UseCases */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = UseCases; sourceTree = SOURCE_ROOT; };
 		PKGREF007 /* UILogics */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = UILogics; sourceTree = SOURCE_ROOT; };
@@ -76,8 +74,6 @@
 				D88BD05560B7048FED1857ED /* iosApp */,
 				PKGREF001 /* Memories */,
 				PKGREF002 /* Domains */,
-				PKGREF003 /* APIClients */,
-				PKGREF004 /* APIGateways */,
 				PKGREF005 /* Repositories */,
 				PKGREF006 /* UseCases */,
 				PKGREF007 /* UILogics */,
@@ -206,6 +202,10 @@
 				DEVELOPMENT_ASSET_PATHS = "\"iosApp/Preview Content\"";
 				DEVELOPMENT_TEAM = "${TEAM_ID}";
 				ENABLE_PREVIEWS = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/../shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",
+				);
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = iosApp/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -217,6 +217,11 @@
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-framework",
+					Shared,
 				);
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
@@ -363,6 +368,10 @@
 				DEVELOPMENT_ASSET_PATHS = "\"iosApp/Preview Content\"";
 				DEVELOPMENT_TEAM = "${TEAM_ID}";
 				ENABLE_PREVIEWS = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/../shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",
+				);
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = iosApp/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -374,6 +383,11 @@
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-framework",
+					Shared,
 				);
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;

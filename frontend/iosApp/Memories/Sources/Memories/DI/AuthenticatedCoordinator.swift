@@ -5,6 +5,7 @@ import Domains
 import UILogics
 import UIComponents
 import UseCases
+@preconcurrency import Shared
 
 @MainActor
 public final class AuthenticatedRouter: AuthenticatedRouterProtocol, ObservableObject {
@@ -14,8 +15,8 @@ public final class AuthenticatedRouter: AuthenticatedRouterProtocol, ObservableO
     private var cancellables = Set<AnyCancellable>()
 
     public init(
-        pendingDeepLink: DeepLink?,
-        deepLinkPublisher: AnyPublisher<DeepLink, Never>
+        pendingDeepLink: Shared.DeepLink?,
+        deepLinkPublisher: AnyPublisher<Shared.DeepLink, Never>
     ) {
         // Cold Start: process pending deep link
         if let deepLink = pendingDeepLink {
@@ -31,11 +32,11 @@ public final class AuthenticatedRouter: AuthenticatedRouterProtocol, ObservableO
             .store(in: &cancellables)
     }
 
-    private func handleDeepLink(_ deepLink: DeepLink) {
-        switch deepLink {
-        case .album(let albumId):
+    private func handleDeepLink(_ deepLink: Shared.DeepLink) {
+        switch onEnum(of: deepLink) {
+        case .album(let album):
             path = NavigationPath()
-            path.append(AuthenticatedRoute.albumDetail(.deepLink(id: albumId)))
+            path.append(AuthenticatedRoute.albumDetail(.deepLink(id: Int(album.albumId))))
         }
     }
 
@@ -99,7 +100,7 @@ public final class AuthenticatedCoordinator: ObservableObject {
     public func makeLoginView(user: User) -> LoginView {
         let continueAsItem = LoginViewModel.ContinueAsUIModel(
             userName: user.name,
-            avatarUrl: user.avatarUrl,
+            avatarUrl: user.avatarURL,
             onTap: { [weak self] in
                 self?.state = .main
             }
@@ -107,7 +108,7 @@ public final class AuthenticatedCoordinator: ObservableObject {
         let viewModel = factory.makeLoginViewModel(
             onSuccess: { [weak self] session in
                 // New login succeeded, recreate AuthenticatedRootView with new session
-                self?.onReLogin?(session.token, session.userId)
+                self?.onReLogin?(session.token, session.userIdInt)
             },
             continueAsItem: continueAsItem
         )

@@ -2,6 +2,7 @@ import SwiftUI
 import Combine
 import UIComponents
 import UseCases
+@preconcurrency import Shared
 
 public struct RootView: View {
     @ObservedObject var viewModel: RootViewModel
@@ -74,8 +75,8 @@ struct AuthenticatedRootView: View {
         token: String,
         userId: Int,
         hasPreviousSession: Bool,
-        pendingDeepLink: DeepLink?,
-        deepLinkPublisher: AnyPublisher<DeepLink, Never>,
+        pendingDeepLink: Shared.DeepLink?,
+        deepLinkPublisher: AnyPublisher<Shared.DeepLink, Never>,
         onReLogin: @escaping (String, Int) -> Void
     ) {
         let container = AuthenticatedContainer(token: token, userId: userId)

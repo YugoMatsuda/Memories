@@ -20,7 +20,7 @@ public final class UnauthenticatedCoordinator: ObservableObject {
     public func makeLoginView() -> LoginView {
         let viewModel = factory.makeLoginViewModel(
             onSuccess: { [weak self] session in
-                self?.onLogin(session.token, session.userId)
+                self?.onLogin(session.token, session.userIdInt)
             }
         )
         return LoginView(viewModel: viewModel)

@@ -9,7 +9,14 @@ let package = Package(
         .library(name: "Domains", targets: ["Domains"]),
     ],
     targets: [
-        .target(name: "Domains"),
+        .binaryTarget(
+            name: "Shared",
+            path: "../../shared/build/XCFrameworks/debug/Shared.xcframework"
+        ),
+        .target(
+            name: "Domains",
+            dependencies: ["Shared"]
+        ),
         .testTarget(name: "DomainsTests", dependencies: ["Domains"]),
     ]
 )

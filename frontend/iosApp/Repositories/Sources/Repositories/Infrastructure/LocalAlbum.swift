@@ -1,6 +1,7 @@
 import Foundation
 import SwiftData
 import Domains
+import Shared
 
 @Model
 public final class LocalAlbum: DomainConvertible {
@@ -20,34 +21,34 @@ public final class LocalAlbum: DomainConvertible {
     // MARK: - DomainConvertible
 
     public required init(from entity: Album) {
-        self.localId = entity.localId
-        self.serverId = entity.id
+        self.localId = entity.localId.uuid
+        self.serverId = entity.serverId?.intValue
         self.title = entity.title
-        self.coverImageUrl = entity.coverImageUrl?.absoluteString
+        self.coverImageUrl = entity.coverImageUrl
         self.coverImageLocalPath = entity.coverImageLocalPath
-        self.createdAt = entity.createdAt
+        self.createdAt = entity.createdAt.date
         self.updatedAt = Date()
         self.syncStatusRaw = entity.syncStatus.rawValue
     }
 
     public func update(from entity: Album) {
-        self.serverId = entity.id
+        self.serverId = entity.serverId?.intValue
         self.title = entity.title
-        self.coverImageUrl = entity.coverImageUrl?.absoluteString
+        self.coverImageUrl = entity.coverImageUrl
         self.coverImageLocalPath = entity.coverImageLocalPath
         self.updatedAt = Date()
         self.syncStatusRaw = entity.syncStatus.rawValue
     }
 
     public func entity() -> Album {
-        Album(
-            id: serverId,
+        Album.create(
+            serverId: serverId,
             localId: localId,
             title: title,
             coverImageUrl: coverImageUrl.flatMap { URL(string: $0) },
             coverImageLocalPath: coverImageLocalPath,
             createdAt: createdAt,
-            syncStatus: SyncStatus(rawValue: syncStatusRaw) ?? .synced
+            syncStatus: Shared.__SyncStatus.from(rawValue: syncStatusRaw).toSwiftEnum()
         )
     }
 }
