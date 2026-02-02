@@ -1,49 +1,79 @@
 package com.example.memoriesapp
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.safeContentPadding
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import org.jetbrains.compose.resources.painterResource
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.navigation.compose.rememberNavController
+import com.example.memoriesapp.di.AppContainer
+import com.example.memoriesapp.ui.navigation.AppNavGraph
+import com.example.memoriesapp.ui.navigation.Route
+import com.example.memoriesapp.ui.navigation.RootState
+import com.example.memoriesapp.ui.theme.MemoriesAppTheme
+import com.example.memoriesapp.usecase.CheckPreviousSessionResult
 
-import memoriesapp.composeapp.generated.resources.Res
-import memoriesapp.composeapp.generated.resources.compose_multiplatform
-
+/**
+ * Main App composable.
+ * Manages root state and navigation similar to iOS RootView.
+ */
 @Composable
-@Preview
-fun App() {
-    MaterialTheme {
-        var showContent by remember { mutableStateOf(false) }
-        Column(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.primaryContainer)
-                .safeContentPadding()
-                .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Button(onClick = { showContent = !showContent }) {
-                Text("Click me!")
+fun App(appContainer: AppContainer = remember { AppContainer() }) {
+    val navController = rememberNavController()
+    var rootState by remember { mutableStateOf<RootState>(RootState.Launching) }
+
+    // Initialize: Check for previous session
+    LaunchedEffect(Unit) {
+        val result = appContainer.rootUseCase.checkPreviousSession()
+        rootState = when (result) {
+            is CheckPreviousSessionResult.LoggedIn -> {
+                RootState.Authenticated(
+                    token = result.session.token,
+                    userId = result.session.userId,
+                    hasPreviousSession = true
+                )
             }
-            AnimatedVisibility(showContent) {
-                val greeting = remember { Greeting().greet() }
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Image(painterResource(Res.drawable.compose_multiplatform), null)
-                    Text("Compose: $greeting")
+            is CheckPreviousSessionResult.NotLoggedIn -> {
+                RootState.Unauthenticated
+            }
+        }
+    }
+
+    // Handle root state changes for navigation
+    LaunchedEffect(rootState) {
+        when (rootState) {
+            is RootState.Launching -> {
+                // Wait for initialization
+            }
+            is RootState.Unauthenticated -> {
+                navController.navigate(Route.Login.route) {
+                    popUpTo(0) { inclusive = true }
+                }
+            }
+            is RootState.Authenticated -> {
+                navController.navigate(Route.Splash.route) {
+                    popUpTo(0) { inclusive = true }
                 }
             }
         }
+    }
+
+    MemoriesAppTheme {
+        AppNavGraph(
+            navController = navController,
+            appContainer = appContainer,
+            rootState = rootState,
+            onLoginSuccess = { token, userId ->
+                rootState = RootState.Authenticated(
+                    token = token,
+                    userId = userId,
+                    hasPreviousSession = false
+                )
+            },
+            onLogout = {
+                rootState = RootState.Unauthenticated
+            }
+        )
     }
 }
