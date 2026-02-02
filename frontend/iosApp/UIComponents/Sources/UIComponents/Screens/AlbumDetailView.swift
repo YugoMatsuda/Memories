@@ -10,6 +10,8 @@ public struct AlbumDetailView: View {
         GridItem(.flexible(), spacing: 12)
     ]
 
+    private let viewerItemsLimit = 10
+
     public init(viewModel: AlbumDetailViewModel) {
         self._viewModel = StateObject(wrappedValue: viewModel)
     }
@@ -42,10 +44,11 @@ public struct AlbumDetailView: View {
             viewModel.onAppear()
         }
         .fullScreenCover(isPresented: showViewerBinding) {
-            if case .success(let listData) = viewModel.displayResult {
+            if case .success(let listData) = viewModel.displayResult,
+               let viewerMemoryId = viewModel.viewerMemoryId {
                 MemoryViewerView(
                     viewerMemoryId: $viewModel.viewerMemoryId,
-                    items: listData.items
+                    items: viewerItems(for: viewerMemoryId, from: listData.items)
                 )
             }
         }
@@ -56,6 +59,19 @@ public struct AlbumDetailView: View {
             get: { viewModel.viewerMemoryId != nil },
             set: { if !$0 { viewModel.closeMemoryViewer() } }
         )
+    }
+
+    private func viewerItems(for selectedId: UUID, from items: [AlbumDetailViewModel.MemoryItemUIModel]) -> [AlbumDetailViewModel.MemoryItemUIModel] {
+        guard let selectedIndex = items.firstIndex(where: { $0.id == selectedId }) else {
+            return Array(items.prefix(viewerItemsLimit))
+        }
+
+        let halfLimit = viewerItemsLimit / 2
+        let startIndex = max(0, selectedIndex - halfLimit)
+        let endIndex = min(items.count, startIndex + viewerItemsLimit)
+        let adjustedStartIndex = max(0, endIndex - viewerItemsLimit)
+
+        return Array(items[adjustedStartIndex..<endIndex])
     }
 
     @ViewBuilder
