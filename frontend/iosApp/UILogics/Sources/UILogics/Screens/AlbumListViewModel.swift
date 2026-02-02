@@ -9,7 +9,7 @@ import Utilities
 public final class AlbumListViewModel: ObservableObject {
     @Published public private(set) var userIcon: UserIconUIModel?
     @Published public private(set) var displayResult: DisplayResult = .loading
-    @Published public private(set) var syncState: SyncQueueState = SyncQueueState(pendingCount: 0, isSyncing: false)
+    @Published public private(set) var syncState: Repositories.SyncQueueState = Repositories.SyncQueueState(pendingCount: 0, isSyncing: false)
     @Published public private(set) var isOnline: Bool = true
 
     public let isNetworkDebugMode: Bool
@@ -45,6 +45,7 @@ public final class AlbumListViewModel: ObservableObject {
         albumListUseCase.observeAlbumChange()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] event in
+                print("[AlbumListViewModel] sink received event: \(event)")
                 self?.handleLocalChange(event)
             }
             .store(in: &cancellables)
@@ -52,6 +53,7 @@ public final class AlbumListViewModel: ObservableObject {
         albumListUseCase.observeSync()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] state in
+                print("[AlbumListViewModel] sync state received: pendingCount=\(state.pendingCount), isSyncing=\(state.isSyncing)")
                 self?.syncState = state
             }
             .store(in: &cancellables)
@@ -68,8 +70,12 @@ public final class AlbumListViewModel: ObservableObject {
         albumListUseCase.toggleOnlineState()
     }
 
-    private func handleLocalChange(_ event: LocalAlbumChangeEvent) {
-        guard case .success(let currentData) = displayResult else { return }
+    private func handleLocalChange(_ event: Repositories.LocalAlbumChangeEvent) {
+        print("[AlbumListViewModel] handleLocalChange called: \(event)")
+        guard case .success(let currentData) = displayResult else {
+            print("[AlbumListViewModel] displayResult is not .success, ignoring event")
+            return
+        }
 
         var albums = currentData.albums
 

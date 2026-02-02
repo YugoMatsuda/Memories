@@ -12,11 +12,11 @@ public final class AlbumDetailUseCase: AlbumDetailUseCaseProtocol, @unchecked Se
     private let memoryGateway: MemoryGatewayProtocol
     private let reachabilityRepository: ReachabilityRepositoryProtocol
 
-    public var localChangePublisher: AnyPublisher<LocalMemoryChangeEvent, Never> {
+    public var localChangePublisher: AnyPublisher<Repositories.LocalMemoryChangeEvent, Never> {
         memoryRepository.localChangePublisher
     }
 
-    public var observeAlbumUpdate: AnyPublisher<LocalAlbumChangeEvent, Never> {
+    public var observeAlbumUpdate: AnyPublisher<Repositories.LocalAlbumChangeEvent, Never> {
         albumRepository.localChangePublisher
     }
 
@@ -35,7 +35,7 @@ public final class AlbumDetailUseCase: AlbumDetailUseCaseProtocol, @unchecked Se
     }
 
     public func display(album: Album) async -> AlbumDetailUseCaseModel.DisplayResult {
-        // If album is not synced yet, only show local memories
+        // If album is not synced yet, only show local memories (all of them)
         guard let albumServerId = album.id else {
             let cached = await memoryRepository.getAll(albumLocalId: album.localIdUUID)
             return .success(AlbumDetailUseCaseModel.PageInfo(memories: cached, hasMore: false))
@@ -46,11 +46,12 @@ public final class AlbumDetailUseCase: AlbumDetailUseCaseProtocol, @unchecked Se
                 let response = try await memoryGateway.getMemories(albumId: albumServerId, page: 1, pageSize: Const.pageSize)
                 let memories = response.items.compactMap { Shared.MemoryMapper.shared.toDomain(response: $0, albumLocalId: album.localId) }
                 try? await memoryRepository.syncSet(memories, albumLocalId: album.localIdUUID)
-                let allMemories = await memoryRepository.getAll(albumLocalId: album.localIdUUID)
+                // Limit to current page
+                let allMemories = Array(await memoryRepository.getAll(albumLocalId: album.localIdUUID).prefix(Const.pageSize))
                 let hasMore = Int(response.page) * Int(response.pageSize) < Int(response.total)
                 return .success(AlbumDetailUseCaseModel.PageInfo(memories: allMemories, hasMore: hasMore))
             } catch {
-                // Fallback to cache on error
+                // Fallback to all cache on error
                 let cached = await memoryRepository.getAll(albumLocalId: album.localIdUUID)
                 if !cached.isEmpty {
                     return .success(AlbumDetailUseCaseModel.PageInfo(memories: cached, hasMore: false))
@@ -58,7 +59,7 @@ public final class AlbumDetailUseCase: AlbumDetailUseCaseProtocol, @unchecked Se
                 return .failure(mapDisplayError(error))
             }
         } else {
-            // Offline: get from cache (empty is valid - album may have no memories yet)
+            // Offline: get all from cache (empty is valid - album may have no memories yet)
             let cached = await memoryRepository.getAll(albumLocalId: album.localIdUUID)
             return .success(AlbumDetailUseCaseModel.PageInfo(memories: cached, hasMore: false))
         }
@@ -78,7 +79,8 @@ public final class AlbumDetailUseCase: AlbumDetailUseCaseProtocol, @unchecked Se
             let response = try await memoryGateway.getMemories(albumId: albumServerId, page: page, pageSize: Const.pageSize)
             let memories = response.items.compactMap { Shared.MemoryMapper.shared.toDomain(response: $0, albumLocalId: album.localId) }
             try? await memoryRepository.syncAppend(memories)
-            let allMemories = await memoryRepository.getAll(albumLocalId: album.localIdUUID)
+            // Limit to current cumulative page count
+            let allMemories = Array(await memoryRepository.getAll(albumLocalId: album.localIdUUID).prefix(page * Const.pageSize))
             let hasMore = Int(response.page) * Int(response.pageSize) < Int(response.total)
             return .success(AlbumDetailUseCaseModel.PageInfo(memories: allMemories, hasMore: hasMore))
         } catch {

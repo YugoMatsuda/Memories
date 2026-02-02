@@ -36,136 +36,203 @@ public final class AuthenticatedContainer {
         Shared.AuthenticatedApiClient(baseUrl: AppConfig.baseURL.absoluteString, apiToken: token)
     }()
 
-    // MARK: - KMP Gateways (wrapped with adapters)
+    // MARK: - KMP Gateways
 
-    private lazy var userGateway: UserGatewayProtocol = {
-        let kmpGateway = Shared.UserGatewayImpl(apiClient: kmpApiClient)
-        return UserGatewayAdapter(kmpGateway: kmpGateway)
+    private lazy var kmpUserGateway: Shared.UserGateway = {
+        Shared.UserGatewayImpl(apiClient: kmpApiClient)
     }()
 
-    private lazy var albumGateway: AlbumGatewayProtocol = {
-        let kmpGateway = Shared.AlbumGatewayImpl(apiClient: kmpApiClient)
-        return AlbumGatewayAdapter(kmpGateway: kmpGateway)
+    private lazy var kmpAlbumGateway: Shared.AlbumGateway = {
+        Shared.AlbumGatewayImpl(apiClient: kmpApiClient)
     }()
 
-    private lazy var memoryGateway: MemoryGatewayProtocol = {
-        let kmpGateway = Shared.MemoryGatewayImpl(apiClient: kmpApiClient)
-        return MemoryGatewayAdapter(kmpGateway: kmpGateway)
+    private lazy var kmpMemoryGateway: Shared.MemoryGateway = {
+        Shared.MemoryGatewayImpl(apiClient: kmpApiClient)
     }()
 
-    // MARK: - Repositories
+    // MARK: - Swift Repositories (SwiftData)
 
-    private lazy var userRepository: UserRepository = {
-        UserRepository(userId: userId, database: database)
+    private lazy var swiftUserRepository: Repositories.UserRepository = {
+        Repositories.UserRepository(userId: userId, database: database)
     }()
 
-    private lazy var albumRepository: AlbumRepository = {
-        AlbumRepository(database: database)
+    private lazy var swiftAlbumRepository: Repositories.AlbumRepository = {
+        Repositories.AlbumRepository(database: database)
     }()
 
-    private lazy var memoryRepository: MemoryRepository = {
-        MemoryRepository(database: database)
+    private lazy var swiftMemoryRepository: Repositories.MemoryRepository = {
+        Repositories.MemoryRepository(database: database)
     }()
 
-    public lazy var syncQueueRepository: SyncQueueRepository = {
-        SyncQueueRepository(database: database)
+    private lazy var swiftSyncQueueRepository: Repositories.SyncQueueRepository = {
+        Repositories.SyncQueueRepository(database: database)
     }()
 
-    private lazy var imageStorageRepository: ImageStorageRepository = {
-        ImageStorageRepository(userId: userId)
+    private lazy var swiftImageStorageRepository: Repositories.ImageStorageRepository = {
+        Repositories.ImageStorageRepository(userId: userId)
     }()
 
     public var reachabilityRepository: ReachabilityRepositoryProtocol {
         AppConfig.reachabilityRepository
     }
 
-    // MARK: - Services
+    // MARK: - KMP Repository Bridges (Swift -> KMP)
 
-    private lazy var syncQueueService: SyncQueueService = {
-        SyncQueueService(
-            syncQueueRepository: syncQueueRepository,
-            albumRepository: albumRepository,
-            memoryRepository: memoryRepository,
-            userRepository: userRepository,
-            albumGateway: albumGateway,
-            memoryGateway: memoryGateway,
-            userGateway: userGateway,
-            imageStorageRepository: imageStorageRepository,
+    private lazy var userRepositoryBridge: UserRepositoryBridgeImpl = {
+        UserRepositoryBridgeImpl(repository: swiftUserRepository)
+    }()
+
+    private lazy var albumRepositoryBridge: AlbumRepositoryBridgeImpl = {
+        AlbumRepositoryBridgeImpl(repository: swiftAlbumRepository)
+    }()
+
+    private lazy var memoryRepositoryBridge: MemoryRepositoryBridgeImpl = {
+        MemoryRepositoryBridgeImpl(repository: swiftMemoryRepository)
+    }()
+
+    private lazy var syncQueueRepositoryBridge: SyncQueueRepositoryBridgeImpl = {
+        SyncQueueRepositoryBridgeImpl(repository: swiftSyncQueueRepository)
+    }()
+
+    private lazy var imageStorageRepositoryBridge: ImageStorageRepositoryBridgeImpl = {
+        ImageStorageRepositoryBridgeImpl(repository: swiftImageStorageRepository)
+    }()
+
+    private lazy var reachabilityRepositoryBridge: ReachabilityRepositoryBridgeImpl = {
+        ReachabilityRepositoryBridgeImpl(repository: reachabilityRepository)
+    }()
+
+    private lazy var authSessionRepositoryBridge: AuthSessionRepositoryBridgeImpl = {
+        AuthSessionRepositoryBridgeImpl(repository: AppConfig.authSessionRepository)
+    }()
+
+    // MARK: - KMP Repositories (via Bridge)
+
+    private lazy var kmpUserRepository: Shared.UserRepository = {
+        Shared.UserRepositoryImpl(bridge: userRepositoryBridge)
+    }()
+
+    private lazy var kmpAlbumRepository: Shared.AlbumRepository = {
+        Shared.AlbumRepositoryImpl(bridge: albumRepositoryBridge)
+    }()
+
+    private lazy var kmpMemoryRepository: Shared.MemoryRepository = {
+        Shared.MemoryRepositoryImpl(bridge: memoryRepositoryBridge)
+    }()
+
+    private lazy var kmpSyncQueueRepository: Shared.SyncQueueRepository = {
+        Shared.SyncQueueRepositoryImpl(bridge: syncQueueRepositoryBridge)
+    }()
+
+    private lazy var kmpImageStorageRepository: Shared.ImageStorageRepository = {
+        Shared.ImageStorageRepositoryImpl(bridge: imageStorageRepositoryBridge)
+    }()
+
+    private lazy var kmpReachabilityRepository: Shared.ReachabilityRepository = {
+        Shared.ReachabilityRepositoryImpl(bridge: reachabilityRepositoryBridge)
+    }()
+
+    private lazy var kmpAuthSessionRepository: Shared.AuthSessionRepository = {
+        Shared.AuthSessionRepositoryImpl(bridge: authSessionRepositoryBridge)
+    }()
+
+    // MARK: - KMP SyncQueueService
+
+    private lazy var kmpSyncQueueService: Shared.SyncQueueService = {
+        Shared.SyncQueueServiceImpl(
+            syncQueueRepository: kmpSyncQueueRepository,
+            albumRepository: kmpAlbumRepository,
+            memoryRepository: kmpMemoryRepository,
+            userRepository: kmpUserRepository,
+            albumGateway: kmpAlbumGateway,
+            memoryGateway: kmpMemoryGateway,
+            userGateway: kmpUserGateway,
+            imageStorageRepository: kmpImageStorageRepository,
+            reachabilityRepository: kmpReachabilityRepository
+        )
+    }()
+
+    // MARK: - KMP UseCases
+
+    public lazy var splashUseCase: SplashUseCaseProtocol = {
+        let kmpUseCase = Shared.SplashUseCaseImpl(
+            userGateway: kmpUserGateway,
+            userRepository: kmpUserRepository,
+            authSessionRepository: kmpAuthSessionRepository,
+            reachabilityRepository: kmpReachabilityRepository,
+            syncQueueRepository: kmpSyncQueueRepository
+        )
+        return SplashUseCaseAdapter(kmpUseCase: kmpUseCase)
+    }()
+
+    public lazy var albumListUseCase: AlbumListUseCaseProtocol = {
+        let kmpUseCase = Shared.AlbumListUseCaseImpl(
+            userRepository: kmpUserRepository,
+            albumRepository: kmpAlbumRepository,
+            albumGateway: kmpAlbumGateway,
+            reachabilityRepository: kmpReachabilityRepository,
+            syncQueueService: kmpSyncQueueService,
+            syncQueueRepository: kmpSyncQueueRepository
+        )
+        return AlbumListUseCaseAdapter(
+            kmpUseCase: kmpUseCase,
             reachabilityRepository: reachabilityRepository
         )
     }()
 
-    // MARK: - UseCases
-
-    public lazy var splashUseCase: SplashUseCase = {
-        SplashUseCase(
-            userGateway: userGateway,
-            userRepository: userRepository,
-            authSessionRepository: AppConfig.authSessionRepository,
-            reachabilityRepository: reachabilityRepository,
-            syncQueueRepository: syncQueueRepository
+    public lazy var userProfileUseCase: UserProfileUseCaseProtocol = {
+        let kmpUseCase = Shared.UserProfileUseCaseImpl(
+            userGateway: kmpUserGateway,
+            userRepository: kmpUserRepository,
+            authSessionRepository: kmpAuthSessionRepository,
+            syncQueueService: kmpSyncQueueService,
+            reachabilityRepository: kmpReachabilityRepository,
+            imageStorageRepository: kmpImageStorageRepository
         )
+        return UserProfileUseCaseAdapter(kmpUseCase: kmpUseCase)
     }()
 
-
-    public lazy var albumListUseCase: AlbumListUseCase = {
-        AlbumListUseCase(
-            userRepository: userRepository,
-            albumRepository: albumRepository,
-            albumGateway: albumGateway,
-            reachabilityRepository: reachabilityRepository,
-            syncQueueService: syncQueueService,
-            syncQueueRepository: syncQueueRepository
+    public lazy var albumFormUseCase: AlbumFormUseCaseProtocol = {
+        let kmpUseCase = Shared.AlbumFormUseCaseImpl(
+            albumRepository: kmpAlbumRepository,
+            albumGateway: kmpAlbumGateway,
+            syncQueueService: kmpSyncQueueService,
+            reachabilityRepository: kmpReachabilityRepository,
+            imageStorageRepository: kmpImageStorageRepository
         )
+        return AlbumFormUseCaseAdapter(kmpUseCase: kmpUseCase)
     }()
 
-    public lazy var userProfileUseCase: UserProfileUseCase = {
-        UserProfileUseCase(
-            userGateway: userGateway,
-            userRepository: userRepository,
-            authSessionRepository: AppConfig.authSessionRepository,
-            syncQueueService: syncQueueService,
-            reachabilityRepository: reachabilityRepository,
-            imageStorageRepository: imageStorageRepository
+    public lazy var memoryFormUseCase: MemoryFormUseCaseProtocol = {
+        let kmpUseCase = Shared.MemoryFormUseCaseImpl(
+            memoryRepository: kmpMemoryRepository,
+            memoryGateway: kmpMemoryGateway,
+            syncQueueService: kmpSyncQueueService,
+            reachabilityRepository: kmpReachabilityRepository,
+            imageStorageRepository: kmpImageStorageRepository
         )
+        return MemoryFormUseCaseAdapter(kmpUseCase: kmpUseCase)
     }()
 
-    public lazy var albumFormUseCase: AlbumFormUseCase = {
-        AlbumFormUseCase(
-            albumRepository: albumRepository,
-            albumGateway: albumGateway,
-            syncQueueService: syncQueueService,
-            reachabilityRepository: reachabilityRepository,
-            imageStorageRepository: imageStorageRepository
+    public lazy var albumDetailUseCase: AlbumDetailUseCaseProtocol = {
+        let kmpUseCase = Shared.AlbumDetailUseCaseImpl(
+            memoryRepository: kmpMemoryRepository,
+            albumRepository: kmpAlbumRepository,
+            albumGateway: kmpAlbumGateway,
+            memoryGateway: kmpMemoryGateway,
+            reachabilityRepository: kmpReachabilityRepository
         )
+        return AlbumDetailUseCaseAdapter(kmpUseCase: kmpUseCase)
     }()
 
-    public lazy var memoryFormUseCase: MemoryFormUseCase = {
-        MemoryFormUseCase(
-            memoryRepository: memoryRepository,
-            memoryGateway: memoryGateway,
-            syncQueueService: syncQueueService,
-            reachabilityRepository: reachabilityRepository,
-            imageStorageRepository: imageStorageRepository
+    public lazy var syncQueuesUseCase: SyncQueuesUseCaseProtocol = {
+        let kmpUseCase = Shared.SyncQueuesUseCaseImpl(
+            syncQueueRepository: kmpSyncQueueRepository,
+            albumRepository: kmpAlbumRepository,
+            memoryRepository: kmpMemoryRepository,
+            userRepository: kmpUserRepository
         )
+        return SyncQueuesUseCaseAdapter(kmpUseCase: kmpUseCase)
     }()
 
-    public lazy var albumDetailUseCase: AlbumDetailUseCase = {
-        AlbumDetailUseCase(
-            memoryRepository: memoryRepository,
-            albumRepository: albumRepository,
-            albumGateway: albumGateway,
-            memoryGateway: memoryGateway,
-            reachabilityRepository: reachabilityRepository
-        )
-    }()
-
-    public lazy var syncQueuesUseCase: SyncQueuesUseCase = {
-        SyncQueuesUseCase(
-            syncQueueRepository: syncQueueRepository,
-            albumRepository: albumRepository,
-            memoryRepository: memoryRepository,
-            userRepository: userRepository
-        )
-    }()
 }

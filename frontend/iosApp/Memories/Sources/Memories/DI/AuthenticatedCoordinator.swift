@@ -14,8 +14,8 @@ public final class AuthenticatedRouter: AuthenticatedRouterProtocol, ObservableO
     private var cancellables = Set<AnyCancellable>()
 
     public init(
-        pendingDeepLink: DeepLink?,
-        deepLinkPublisher: AnyPublisher<DeepLink, Never>
+        pendingDeepLink: UseCases.DeepLink?,
+        deepLinkPublisher: AnyPublisher<UseCases.DeepLink, Never>
     ) {
         // Cold Start: process pending deep link
         if let deepLink = pendingDeepLink {
@@ -31,7 +31,7 @@ public final class AuthenticatedRouter: AuthenticatedRouterProtocol, ObservableO
             .store(in: &cancellables)
     }
 
-    private func handleDeepLink(_ deepLink: DeepLink) {
+    private func handleDeepLink(_ deepLink: UseCases.DeepLink) {
         switch deepLink {
         case .album(let albumId):
             path = NavigationPath()

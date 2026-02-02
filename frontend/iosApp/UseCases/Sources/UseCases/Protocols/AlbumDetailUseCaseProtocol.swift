@@ -52,6 +52,6 @@ public protocol AlbumDetailUseCaseProtocol: Sendable {
     func display(album: Album) async -> AlbumDetailUseCaseModel.DisplayResult
     func next(album: Album, page: Int) async -> AlbumDetailUseCaseModel.NextResult
     func resolveAlbum(serverId: Int) async -> AlbumDetailUseCaseModel.ResolveAlbumResult
-    var localChangePublisher: AnyPublisher<LocalMemoryChangeEvent, Never> { get }
-    var observeAlbumUpdate: AnyPublisher<LocalAlbumChangeEvent, Never> { get }
+    var localChangePublisher: AnyPublisher<Repositories.LocalMemoryChangeEvent, Never> { get }
+    var observeAlbumUpdate: AnyPublisher<Repositories.LocalAlbumChangeEvent, Never> { get }
 }

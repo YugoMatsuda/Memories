@@ -16,8 +16,8 @@ public final class RootViewModel: ObservableObject {
     @Published public var alertItem: AlertItem?
 
     // DeepLink
-    private(set) var pendingDeepLink: DeepLink?
-    public let deepLinkSubject = PassthroughSubject<DeepLink, Never>()
+    private(set) var pendingDeepLink: UseCases.DeepLink?
+    public let deepLinkSubject = PassthroughSubject<UseCases.DeepLink, Never>()
 
     private let rootUseCase: RootUseCaseProtocol
     private var cancellables = Set<AnyCancellable>()
@@ -77,7 +77,7 @@ public final class RootViewModel: ObservableObject {
         }
     }
 
-    public func consumePendingDeepLink() -> DeepLink? {
+    public func consumePendingDeepLink() -> UseCases.DeepLink? {
         defer { pendingDeepLink = nil }
         return pendingDeepLink
     }

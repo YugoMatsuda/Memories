@@ -74,8 +74,8 @@ struct AuthenticatedRootView: View {
         token: String,
         userId: Int,
         hasPreviousSession: Bool,
-        pendingDeepLink: DeepLink?,
-        deepLinkPublisher: AnyPublisher<DeepLink, Never>,
+        pendingDeepLink: UseCases.DeepLink?,
+        deepLinkPublisher: AnyPublisher<UseCases.DeepLink, Never>,
         onReLogin: @escaping (String, Int) -> Void
     ) {
         let container = AuthenticatedContainer(token: token, userId: userId)

@@ -155,7 +155,7 @@ public final class AlbumDetailViewModel: ObservableObject {
         }
     }
 
-    private func handleLocalChange(_ event: LocalMemoryChangeEvent) {
+    private func handleLocalChange(_ event: Repositories.LocalMemoryChangeEvent) {
         guard let album, case .success(let currentData) = displayResult else { return }
 
         switch event {
@@ -167,7 +167,7 @@ public final class AlbumDetailViewModel: ObservableObject {
         }
     }
 
-    private func handleAlbumChange(_ event: LocalAlbumChangeEvent) {
+    private func handleAlbumChange(_ event: Repositories.LocalAlbumChangeEvent) {
         switch event {
         case .created:
             break

@@ -17,11 +17,11 @@ public final class AlbumListUseCase: AlbumListUseCaseProtocol, @unchecked Sendab
         userRepository.userPublisher
     }
 
-    public func observeAlbumChange() -> AnyPublisher<LocalAlbumChangeEvent, Never> {
+    public func observeAlbumChange() -> AnyPublisher<Repositories.LocalAlbumChangeEvent, Never> {
         albumRepository.localChangePublisher
     }
 
-    public func observeSync() -> AnyPublisher<SyncQueueState, Never> {
+    public func observeSync() -> AnyPublisher<Repositories.SyncQueueState, Never> {
         Publishers.Merge(
             // Always emit state
             syncQueueRepository.statePublisher,
@@ -29,7 +29,7 @@ public final class AlbumListUseCase: AlbumListUseCaseProtocol, @unchecked Sendab
             reachabilityRepository.isConnectedPublisher
                 .removeDuplicates()
                 .filter { $0 }
-                .flatMap { [weak self] _ -> AnyPublisher<SyncQueueState, Never> in
+                .flatMap { [weak self] _ -> AnyPublisher<Repositories.SyncQueueState, Never> in
                     guard let self else { return Empty().eraseToAnyPublisher() }
                     Task { await self.syncQueueService.processQueue() }
                     return Empty().eraseToAnyPublisher()
@@ -71,12 +71,12 @@ public final class AlbumListUseCase: AlbumListUseCaseProtocol, @unchecked Sendab
                 let response = try await albumGateway.getAlbums(page: 1, pageSize: Const.pageSize)
                 let albums = response.items.map { Shared.AlbumMapper.shared.toDomain(response: $0) }
                 try? await albumRepository.syncSet(albums)
-                // Return albums from cache to get preserved localIds
-                let cachedAlbums = await albumRepository.getAll()
+                // Return albums from cache to get preserved localIds, limited to current page
+                let cachedAlbums = Array(await albumRepository.getAll().prefix(Const.pageSize))
                 let hasMore = Int(response.page) * Int(response.pageSize) < Int(response.total)
                 return .success(AlbumListUseCaseModel.PageInfo(albums: cachedAlbums, hasMore: hasMore))
             } catch {
-                // Fallback to cache on error
+                // Fallback to all cache on error
                 let cached = await albumRepository.getAll()
                 if !cached.isEmpty {
                     return .success(AlbumListUseCaseModel.PageInfo(albums: cached, hasMore: false))
@@ -84,7 +84,7 @@ public final class AlbumListUseCase: AlbumListUseCaseProtocol, @unchecked Sendab
                 return .failure(mapDisplayError(error))
             }
         } else {
-            // Offline: get from cache
+            // Offline: get all from cache
             let cached = await albumRepository.getAll()
             if cached.isEmpty {
                 return .failure(.offline)
@@ -103,7 +103,8 @@ public final class AlbumListUseCase: AlbumListUseCaseProtocol, @unchecked Sendab
             let response = try await albumGateway.getAlbums(page: page, pageSize: Const.pageSize)
             let albums = response.items.map { Shared.AlbumMapper.shared.toDomain(response: $0) }
             try? await albumRepository.syncAppend(albums)
-            let allAlbums = await albumRepository.getAll()
+            // Limit to current cumulative page count
+            let allAlbums = Array(await albumRepository.getAll().prefix(page * Const.pageSize))
             let hasMore = Int(response.page) * Int(response.pageSize) < Int(response.total)
             return .success(AlbumListUseCaseModel.PageInfo(albums: allAlbums, hasMore: hasMore))
         } catch {

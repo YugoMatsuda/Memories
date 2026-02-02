@@ -49,7 +49,7 @@ extension SyncQueuesViewModel {
         public let serverId: String?
         public let createdAt: String
 
-        public init(from item: SyncQueueItem) {
+        public init(from item: UseCases.SyncQueueItem) {
             let operation = item.operation
             self.id = operation.idUUID
             self.entityType = Self.mapEntityType(operation.entityType)

@@ -89,6 +89,7 @@ public final class SyncQueueRepository: SyncQueueRepositoryProtocol, @unchecked 
     public func refreshState() async {
         let pending = await peek()
         let current = stateSubject.value
-        stateSubject.send(SyncQueueState(pendingCount: pending.count, isSyncing: current.isSyncing))
+        let newState = SyncQueueState(pendingCount: pending.count, isSyncing: current.isSyncing)
+        stateSubject.send(newState)
     }
 }
