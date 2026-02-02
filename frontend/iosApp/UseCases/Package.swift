@@ -11,11 +11,10 @@ let package = Package(
     dependencies: [
         .package(path: "../Domains"),
         .package(path: "../Repositories"),
-        .package(path: "../APIGateways"),
         .package(path: "../Utilities"),
     ],
     targets: [
-        .target(name: "UseCases", dependencies: ["Domains", "Repositories", "APIGateways", "Utilities"]),
+        .target(name: "UseCases", dependencies: ["Domains", "Repositories", "Utilities"]),
         .testTarget(name: "UseCasesTests", dependencies: ["UseCases"]),
     ]
 )

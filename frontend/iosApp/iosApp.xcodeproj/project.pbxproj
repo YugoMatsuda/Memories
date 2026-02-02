@@ -14,7 +14,6 @@
 		627E57BD9FB2613EECD493CF /* MemoriesApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MemoriesApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		PKGREF001 /* Memories */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = Memories; sourceTree = SOURCE_ROOT; };
 		PKGREF002 /* Domains */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = Domains; sourceTree = SOURCE_ROOT; };
-		PKGREF004 /* APIGateways */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = APIGateways; sourceTree = SOURCE_ROOT; };
 		PKGREF005 /* Repositories */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = Repositories; sourceTree = SOURCE_ROOT; };
 		PKGREF006 /* UseCases */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = UseCases; sourceTree = SOURCE_ROOT; };
 		PKGREF007 /* UILogics */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = UILogics; sourceTree = SOURCE_ROOT; };
@@ -75,7 +74,6 @@
 				D88BD05560B7048FED1857ED /* iosApp */,
 				PKGREF001 /* Memories */,
 				PKGREF002 /* Domains */,
-				PKGREF004 /* APIGateways */,
 				PKGREF005 /* Repositories */,
 				PKGREF006 /* UseCases */,
 				PKGREF007 /* UILogics */,

@@ -1,5 +1,4 @@
 import Foundation
-import APIGateways
 import Repositories
 import UseCases
 @preconcurrency import Shared
@@ -28,7 +27,6 @@ public enum AppConfig {
     // Shared instances - KMP API Client
     public static let kmpPublicApiClient = Shared.PublicApiClient(baseUrl: baseURL.absoluteString)
     public static let kmpAuthGateway = Shared.AuthGatewayImpl(apiClient: kmpPublicApiClient)
-    public static let authGateway: AuthGatewayProtocol = AuthGatewayAdapter(kmpGateway: kmpAuthGateway)
     public static let authSessionRepository = AuthSessionRepository()
 
     // KMP AuthSessionRepository Bridge
