@@ -24,6 +24,9 @@ app = FastAPI(
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 
+TEST_IMAGES_DIR = Path("test_images")
+
+
 @app.on_event("startup")
 def on_startup() -> None:
     Base.metadata.create_all(bind=engine)
@@ -32,6 +35,7 @@ def on_startup() -> None:
     with SessionLocal() as db:
         existing = db.query(models.User).first()
         if existing is None:
+            # Create demo user
             demo_user = models.User(
                 username="demo",
                 name="Demo User",
@@ -39,6 +43,45 @@ def on_startup() -> None:
             )
             db.add(demo_user)
             db.commit()
+            db.refresh(demo_user)
+
+            # Copy test images to uploads
+            album_image_src = TEST_IMAGES_DIR / "test_album.jpg"
+            memory_image_src = TEST_IMAGES_DIR / "test_memory.jpg"
+
+            album_cover_path = None
+            memory_image_path = None
+
+            if album_image_src.exists():
+                album_cover_dest = UPLOAD_DIR / "test_album.jpg"
+                album_cover_dest.write_bytes(album_image_src.read_bytes())
+                album_cover_path = "/uploads/test_album.jpg"
+
+            if memory_image_src.exists():
+                memory_image_dest = UPLOAD_DIR / "test_memory.jpg"
+                memory_image_dest.write_bytes(memory_image_src.read_bytes())
+                memory_image_path = "/uploads/test_memory.jpg"
+
+            # Create 50 albums with 30 memories each
+            for album_num in range(1, 51):
+                album = models.Album(
+                    title=f"TestAlbum{album_num}",
+                    cover_image_url=album_cover_path,
+                    owner_id=demo_user.id,
+                )
+                db.add(album)
+                db.commit()
+                db.refresh(album)
+
+                for memory_num in range(1, 31):
+                    memory = models.Memory(
+                        album_id=album.id,
+                        title=f"Memory{memory_num}-Album{album_num}",
+                        image_local_uri=memory_image_path,
+                    )
+                    db.add(memory)
+
+                db.commit()
 
 
 @app.post("/auth/login", response_model=schemas.TokenResponse)
