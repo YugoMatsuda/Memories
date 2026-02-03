@@ -173,7 +173,9 @@ flowchart TD
 
 To test offline sync behavior, enable debug mode by setting `onlineState` to `.debug` in the app configuration. This injects `DebugReachabilityRepository` instead of the production implementation, allowing manual control of connectivity state.
 
-![Offline Sync Demo](resource/gifs/Simulator%20Screen%20Recording%20-%20iPhone%2016%20-%202026-02-03%20at%2000.08.08.gif)
+| Offline Sync Demo |
+|-------------------|
+| <img src="resource/gifs/Simulator Screen Recording - iPhone 16 - 2026-02-03 at 00.08.08.gif" width="200"/> |
 
 **iOS** (`AppConfig.swift`)
 
@@ -213,6 +215,9 @@ This allows you to verify that sync operations are triggered when transitioning 
 myapp://albums/{albumId}
 ```
 
+| Cold Start | Warm Start | Unauthenticated |
+|------------|------------|-----------------|
+| <img src="resource/gifs/coldstart.gif" width="200"/> | <img src="resource/gifs/warmstart.gif" width="200"/> | <img src="resource/gifs/unauth.gif" width="200"/> |
 
 ### Testing Deep Links
 
@@ -221,6 +226,8 @@ myapp://albums/{albumId}
 ```bash
 xcrun simctl openurl booted "myapp://albums/1"
 ```
+
+You can also test by entering the URL directly in Safari on the simulator.
 
 **Android**
 
