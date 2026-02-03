@@ -42,7 +42,9 @@ object AlbumMapper {
 
     private fun parseTimestamp(dateString: String): Timestamp {
         return try {
-            Timestamp.parse(dateString)
+            // Backend returns datetime without 'Z' suffix, add it for proper parsing
+            val isoString = if (dateString.endsWith("Z")) dateString else "${dateString}Z"
+            Timestamp.parse(isoString)
         } catch (e: Exception) {
             Timestamp.now()
         }

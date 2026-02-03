@@ -42,6 +42,7 @@ public final class LocalMemory: DomainConvertible {
         self.title = entity.title
         self.imageUrl = entity.imageUrl
         self.imageLocalPath = entity.imageLocalPath
+        self.createdAt = entity.createdAt.date
         self.updatedAt = Date()
         self.syncStatusRaw = entity.syncStatus.rawValue
     }

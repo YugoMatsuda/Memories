@@ -82,6 +82,7 @@ public struct LoginView: View {
                 }
             }
             .buttonStyle(.borderedProminent)
+            .disabled(viewModel.username.isEmpty || viewModel.password.isEmpty)
         }
     }
 }

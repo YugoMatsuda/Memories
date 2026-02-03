@@ -36,6 +36,7 @@ public final class LocalAlbum: DomainConvertible {
         self.title = entity.title
         self.coverImageUrl = entity.coverImageUrl
         self.coverImageLocalPath = entity.coverImageLocalPath
+        self.createdAt = entity.createdAt.date
         self.updatedAt = Date()
         self.syncStatusRaw = entity.syncStatus.rawValue
     }
