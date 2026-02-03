@@ -169,6 +169,40 @@ flowchart TD
 | **Memory** | ✅ | - |
 | **User Profile** | - | ✅ |
 
+### Debug Mode
+
+To test offline sync behavior, enable debug mode by setting `onlineState` to `.debug` in the app configuration. This injects `DebugReachabilityRepository` instead of the production implementation, allowing manual control of connectivity state.
+
+![Offline Sync Demo](resource/gifs/Simulator%20Screen%20Recording%20-%20iPhone%2016%20-%202026-02-03%20at%2000.08.08.gif)
+
+**iOS** (`AppConfig.swift`)
+
+```swift
+public static let onlineState: OnlineState = .debug(initialState: false)
+
+public static let reachabilityRepository: ReachabilityRepositoryProtocol = {
+    switch onlineState {
+    case .debug(let initialState):
+        return DebugReachabilityRepository(isOnline: initialState)
+    case .production:
+        return ReachabilityRepository()
+    }
+}()
+```
+
+**Android** (`AppContainer.kt`)
+
+```kotlin
+val onlineState: OnlineState = OnlineState.Debug(initialState = false)
+```
+
+When debug mode is enabled, the Album List screen displays:
+
+- **Queues Button**: Tap to view the list of pending sync operations
+- **Connectivity Toggle Button**: Tap to switch between online/offline states
+
+This allows you to verify that sync operations are triggered when transitioning from offline to online.
+
 ---
 
 ## Deep Linking
