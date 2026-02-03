@@ -1,28 +1,14 @@
-package com.example.memoriesapp.usecase
+package com.example.memoriesapp.usecase.impl
 
-import com.example.memoriesapp.domain.AuthSession
 import com.example.memoriesapp.repository.AuthSessionRepository
+import com.example.memoriesapp.usecase.CheckPreviousSessionResult
+import com.example.memoriesapp.usecase.DeepLink
+import com.example.memoriesapp.usecase.HandleDeepLinkResult
+import com.example.memoriesapp.usecase.RootUseCase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
-
-/**
- * Result of checking previous session
- */
-sealed class CheckPreviousSessionResult {
-    data class LoggedIn(val session: AuthSession) : CheckPreviousSessionResult()
-    data object NotLoggedIn : CheckPreviousSessionResult()
-}
-
-/**
- * Result of handling deep link
- */
-sealed class HandleDeepLinkResult {
-    data class Authenticated(val deepLink: DeepLink) : HandleDeepLinkResult()
-    data class NotAuthenticated(val deepLink: DeepLink) : HandleDeepLinkResult()
-    data object InvalidURL : HandleDeepLinkResult()
-}
 
 /**
  * Root UseCase for app-level operations

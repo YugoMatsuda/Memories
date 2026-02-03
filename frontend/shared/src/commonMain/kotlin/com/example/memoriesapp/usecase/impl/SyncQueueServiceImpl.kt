@@ -1,7 +1,10 @@
-package com.example.memoriesapp.usecase
+package com.example.memoriesapp.usecase.impl
 
 import com.example.memoriesapp.core.LocalId
+import com.example.memoriesapp.core.SyncStatus
+import com.example.memoriesapp.core.Timestamp
 import com.example.memoriesapp.domain.EntityType
+import com.example.memoriesapp.domain.ImageEntityType
 import com.example.memoriesapp.domain.MimeType
 import com.example.memoriesapp.domain.OperationType
 import com.example.memoriesapp.domain.SyncOperation
@@ -11,25 +14,16 @@ import com.example.memoriesapp.gateway.MemoryGateway
 import com.example.memoriesapp.gateway.UserGateway
 import com.example.memoriesapp.mapper.UserMapper
 import com.example.memoriesapp.repository.AlbumRepository
-import com.example.memoriesapp.domain.ImageEntityType
 import com.example.memoriesapp.repository.ImageStorageRepository
 import com.example.memoriesapp.repository.MemoryRepository
 import com.example.memoriesapp.repository.ReachabilityRepository
 import com.example.memoriesapp.repository.SyncQueueRepository
 import com.example.memoriesapp.repository.UserRepository
-import com.example.memoriesapp.core.Timestamp
+import com.example.memoriesapp.usecase.SyncError
+import com.example.memoriesapp.usecase.SyncQueueService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-
-/**
- * Sync errors
- */
-sealed class SyncError : Exception() {
-    data object DependencyNotSynced : SyncError()
-    data object EntityNotFound : SyncError()
-    data object ImageNotFound : SyncError()
-}
 
 /**
  * Service for processing sync queue operations
@@ -160,7 +154,7 @@ class SyncQueueServiceImpl(
             println("[SyncQueueService] Album created on server with id: $serverId")
             albumRepository.markAsSynced(operation.localId, serverId)
             println("[SyncQueueService] Album marked as synced")
-            album = album.copy(serverId = serverId, syncStatus = com.example.memoriesapp.core.SyncStatus.SYNCED)
+            album = album.copy(serverId = serverId, syncStatus = SyncStatus.SYNCED)
         }
 
         // 2. Upload cover image if exists locally
@@ -211,7 +205,7 @@ class SyncQueueServiceImpl(
         }
 
         // 3. Mark as synced
-        val updatedAlbum = album.copy(syncStatus = com.example.memoriesapp.core.SyncStatus.SYNCED)
+        val updatedAlbum = album.copy(syncStatus = SyncStatus.SYNCED)
         albumRepository.update(updatedAlbum)
     }
 

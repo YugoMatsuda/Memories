@@ -1,29 +1,15 @@
-package com.example.memoriesapp.usecase
+package com.example.memoriesapp.usecase.impl
 
 import com.example.memoriesapp.api.error.ApiError
-import com.example.memoriesapp.domain.User
 import com.example.memoriesapp.gateway.UserGateway
 import com.example.memoriesapp.mapper.UserMapper
 import com.example.memoriesapp.repository.AuthSessionRepository
 import com.example.memoriesapp.repository.ReachabilityRepository
 import com.example.memoriesapp.repository.SyncQueueRepository
 import com.example.memoriesapp.repository.UserRepository
-
-/**
- * Result of launching the app
- */
-sealed class LaunchAppResult {
-    data class Success(val user: User) : LaunchAppResult()
-    data class Failure(val error: LaunchAppError) : LaunchAppResult()
-}
-
-enum class LaunchAppError {
-    SESSION_EXPIRED,
-    NETWORK_ERROR,
-    SERVER_ERROR,
-    OFFLINE_NO_CACHE,
-    UNKNOWN
-}
+import com.example.memoriesapp.usecase.LaunchAppError
+import com.example.memoriesapp.usecase.LaunchAppResult
+import com.example.memoriesapp.usecase.SplashUseCase
 
 /**
  * UseCase for splash screen / app initialization

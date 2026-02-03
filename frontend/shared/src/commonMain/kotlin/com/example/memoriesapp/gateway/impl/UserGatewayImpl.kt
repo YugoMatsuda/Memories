@@ -1,10 +1,11 @@
-package com.example.memoriesapp.gateway
+package com.example.memoriesapp.gateway.impl
 
 import com.example.memoriesapp.api.client.ApiClient
 import com.example.memoriesapp.api.request.AvatarUploadRequest
 import com.example.memoriesapp.api.request.GetUserRequest
 import com.example.memoriesapp.api.request.UserUpdateRequest
 import com.example.memoriesapp.api.response.UserResponse
+import com.example.memoriesapp.gateway.UserGateway
 import kotlinx.serialization.json.Json
 
 /**

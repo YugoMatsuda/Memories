@@ -1,35 +1,23 @@
-package com.example.memoriesapp.usecase
+package com.example.memoriesapp.usecase.impl
 
 import com.example.memoriesapp.core.LocalId
 import com.example.memoriesapp.core.SyncStatus
 import com.example.memoriesapp.core.Timestamp
 import com.example.memoriesapp.domain.Album
 import com.example.memoriesapp.domain.EntityType
+import com.example.memoriesapp.domain.ImageEntityType
 import com.example.memoriesapp.domain.Memory
 import com.example.memoriesapp.domain.MimeType
 import com.example.memoriesapp.domain.OperationType
 import com.example.memoriesapp.gateway.MemoryGateway
 import com.example.memoriesapp.mapper.MemoryMapper
-import com.example.memoriesapp.domain.ImageEntityType
 import com.example.memoriesapp.repository.ImageStorageRepository
 import com.example.memoriesapp.repository.MemoryRepository
 import com.example.memoriesapp.repository.ReachabilityRepository
-
-/**
- * Result of memory create operation
- */
-sealed class MemoryCreateResult {
-    data class Success(val memory: Memory) : MemoryCreateResult()
-    data class SuccessPendingSync(val memory: Memory) : MemoryCreateResult()
-    data class Failure(val error: MemoryCreateError) : MemoryCreateResult()
-}
-
-enum class MemoryCreateError {
-    NETWORK_ERROR,
-    IMAGE_STORAGE_FAILED,
-    DATABASE_ERROR,
-    UNKNOWN
-}
+import com.example.memoriesapp.usecase.MemoryCreateError
+import com.example.memoriesapp.usecase.MemoryCreateResult
+import com.example.memoriesapp.usecase.MemoryFormUseCase
+import com.example.memoriesapp.usecase.SyncQueueService
 
 /**
  * UseCase for memory create form

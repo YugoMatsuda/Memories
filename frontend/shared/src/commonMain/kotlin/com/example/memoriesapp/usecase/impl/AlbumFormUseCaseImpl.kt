@@ -1,53 +1,24 @@
-package com.example.memoriesapp.usecase
+package com.example.memoriesapp.usecase.impl
 
 import com.example.memoriesapp.core.LocalId
 import com.example.memoriesapp.core.SyncStatus
 import com.example.memoriesapp.core.Timestamp
 import com.example.memoriesapp.domain.Album
 import com.example.memoriesapp.domain.EntityType
+import com.example.memoriesapp.domain.ImageEntityType
 import com.example.memoriesapp.domain.MimeType
 import com.example.memoriesapp.domain.OperationType
 import com.example.memoriesapp.gateway.AlbumGateway
 import com.example.memoriesapp.mapper.AlbumMapper
 import com.example.memoriesapp.repository.AlbumRepository
-import com.example.memoriesapp.domain.ImageEntityType
 import com.example.memoriesapp.repository.ImageStorageRepository
 import com.example.memoriesapp.repository.ReachabilityRepository
-
-/**
- * Result of album create operation
- */
-sealed class AlbumCreateResult {
-    data class Success(val album: Album) : AlbumCreateResult()
-    data class SuccessPendingSync(val album: Album) : AlbumCreateResult()
-    data class Failure(val error: AlbumCreateError) : AlbumCreateResult()
-}
-
-enum class AlbumCreateError {
-    NETWORK_ERROR,
-    SERVER_ERROR,
-    IMAGE_STORAGE_FAILED,
-    DATABASE_ERROR,
-    UNKNOWN
-}
-
-/**
- * Result of album update operation
- */
-sealed class AlbumUpdateResult {
-    data class Success(val album: Album) : AlbumUpdateResult()
-    data class SuccessPendingSync(val album: Album) : AlbumUpdateResult()
-    data class Failure(val error: AlbumUpdateError) : AlbumUpdateResult()
-}
-
-enum class AlbumUpdateError {
-    NETWORK_ERROR,
-    SERVER_ERROR,
-    NOT_FOUND,
-    IMAGE_STORAGE_FAILED,
-    DATABASE_ERROR,
-    UNKNOWN
-}
+import com.example.memoriesapp.usecase.AlbumCreateError
+import com.example.memoriesapp.usecase.AlbumCreateResult
+import com.example.memoriesapp.usecase.AlbumFormUseCase
+import com.example.memoriesapp.usecase.AlbumUpdateError
+import com.example.memoriesapp.usecase.AlbumUpdateResult
+import com.example.memoriesapp.usecase.SyncQueueService
 
 /**
  * UseCase for album create/edit form

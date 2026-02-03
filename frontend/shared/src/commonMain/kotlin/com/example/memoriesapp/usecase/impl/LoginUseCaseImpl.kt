@@ -1,24 +1,12 @@
-package com.example.memoriesapp.usecase
+package com.example.memoriesapp.usecase.impl
 
 import com.example.memoriesapp.api.error.ApiError
 import com.example.memoriesapp.domain.AuthSession
 import com.example.memoriesapp.gateway.AuthGateway
 import com.example.memoriesapp.repository.AuthSessionRepository
-
-/**
- * Result of login operation
- */
-sealed class LoginResult {
-    data class Success(val session: AuthSession) : LoginResult()
-    data class Failure(val error: LoginError) : LoginResult()
-}
-
-enum class LoginError {
-    INVALID_CREDENTIALS,
-    NETWORK_ERROR,
-    SERVER_ERROR,
-    UNKNOWN
-}
+import com.example.memoriesapp.usecase.LoginError
+import com.example.memoriesapp.usecase.LoginResult
+import com.example.memoriesapp.usecase.LoginUseCase
 
 /**
  * UseCase for user login

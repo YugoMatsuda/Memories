@@ -4,13 +4,13 @@ import com.example.memoriesapp.api.client.PublicApiClient
 import com.example.memoriesapp.data.repository.AuthSessionRepositoryImpl
 import com.example.memoriesapp.data.repository.DebugReachabilityRepository
 import com.example.memoriesapp.data.repository.ReachabilityRepositoryImpl
-import com.example.memoriesapp.gateway.AuthGatewayImpl
+import com.example.memoriesapp.gateway.impl.AuthGatewayImpl
 import com.example.memoriesapp.repository.AuthSessionRepository
 import com.example.memoriesapp.repository.ReachabilityRepository
 import com.example.memoriesapp.usecase.LoginUseCase
-import com.example.memoriesapp.usecase.LoginUseCaseImpl
 import com.example.memoriesapp.usecase.RootUseCase
-import com.example.memoriesapp.usecase.RootUseCaseImpl
+import com.example.memoriesapp.usecase.impl.LoginUseCaseImpl
+import com.example.memoriesapp.usecase.impl.RootUseCaseImpl
 
 /**
  * Online state configuration for debugging network conditions.

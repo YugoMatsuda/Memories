@@ -6,26 +6,26 @@ import com.example.memoriesapp.data.repository.ImageStorageRepositoryImpl
 import com.example.memoriesapp.data.repository.MemoryRepositoryImpl
 import com.example.memoriesapp.data.repository.SyncQueueRepositoryImpl
 import com.example.memoriesapp.data.repository.UserRepositoryImpl
-import com.example.memoriesapp.gateway.AlbumGatewayImpl
-import com.example.memoriesapp.gateway.MemoryGatewayImpl
-import com.example.memoriesapp.gateway.UserGatewayImpl
+import com.example.memoriesapp.gateway.impl.AlbumGatewayImpl
+import com.example.memoriesapp.gateway.impl.MemoryGatewayImpl
+import com.example.memoriesapp.gateway.impl.UserGatewayImpl
 import com.example.memoriesapp.repository.AuthSessionRepository
 import com.example.memoriesapp.repository.ReachabilityRepository
 import com.example.memoriesapp.usecase.AlbumDetailUseCase
-import com.example.memoriesapp.usecase.AlbumDetailUseCaseImpl
 import com.example.memoriesapp.usecase.AlbumFormUseCase
-import com.example.memoriesapp.usecase.AlbumFormUseCaseImpl
-import com.example.memoriesapp.usecase.AlbumListUseCaseImpl
 import com.example.memoriesapp.usecase.AlbumListUseCaseWrapper
 import com.example.memoriesapp.usecase.MemoryFormUseCase
-import com.example.memoriesapp.usecase.MemoryFormUseCaseImpl
 import com.example.memoriesapp.usecase.SplashUseCase
-import com.example.memoriesapp.usecase.SplashUseCaseImpl
-import com.example.memoriesapp.usecase.SyncQueueServiceImpl
 import com.example.memoriesapp.usecase.SyncQueuesUseCase
-import com.example.memoriesapp.usecase.SyncQueuesUseCaseImpl
 import com.example.memoriesapp.usecase.UserProfileUseCase
-import com.example.memoriesapp.usecase.UserProfileUseCaseImpl
+import com.example.memoriesapp.usecase.impl.AlbumDetailUseCaseImpl
+import com.example.memoriesapp.usecase.impl.AlbumFormUseCaseImpl
+import com.example.memoriesapp.usecase.impl.AlbumListUseCaseImpl
+import com.example.memoriesapp.usecase.impl.MemoryFormUseCaseImpl
+import com.example.memoriesapp.usecase.impl.SplashUseCaseImpl
+import com.example.memoriesapp.usecase.impl.SyncQueueServiceImpl
+import com.example.memoriesapp.usecase.impl.SyncQueuesUseCaseImpl
+import com.example.memoriesapp.usecase.impl.UserProfileUseCaseImpl
 
 /**
  * DI container for authenticated user session.

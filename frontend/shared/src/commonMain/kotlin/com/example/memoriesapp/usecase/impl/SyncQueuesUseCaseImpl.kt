@@ -1,4 +1,4 @@
-package com.example.memoriesapp.usecase
+package com.example.memoriesapp.usecase.impl
 
 import com.example.memoriesapp.domain.EntityType
 import com.example.memoriesapp.domain.SyncOperation
@@ -6,17 +6,10 @@ import com.example.memoriesapp.repository.AlbumRepository
 import com.example.memoriesapp.repository.MemoryRepository
 import com.example.memoriesapp.repository.SyncQueueRepository
 import com.example.memoriesapp.repository.UserRepository
+import com.example.memoriesapp.usecase.SyncQueueItem
+import com.example.memoriesapp.usecase.SyncQueuesUseCase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-
-/**
- * Item representing a sync queue entry with entity details
- */
-data class SyncQueueItem(
-    val operation: SyncOperation,
-    val entityTitle: String?,
-    val entityServerId: Int?
-)
 
 /**
  * UseCase for viewing the sync queue

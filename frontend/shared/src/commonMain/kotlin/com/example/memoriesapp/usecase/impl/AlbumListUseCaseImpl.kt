@@ -1,6 +1,5 @@
-package com.example.memoriesapp.usecase
+package com.example.memoriesapp.usecase.impl
 
-import com.example.memoriesapp.domain.Album
 import com.example.memoriesapp.domain.User
 import com.example.memoriesapp.gateway.AlbumGateway
 import com.example.memoriesapp.mapper.AlbumMapper
@@ -10,6 +9,13 @@ import com.example.memoriesapp.repository.ReachabilityRepository
 import com.example.memoriesapp.repository.SyncQueueRepository
 import com.example.memoriesapp.repository.SyncQueueState
 import com.example.memoriesapp.repository.UserRepository
+import com.example.memoriesapp.usecase.AlbumDisplayError
+import com.example.memoriesapp.usecase.AlbumDisplayResult
+import com.example.memoriesapp.usecase.AlbumListUseCase
+import com.example.memoriesapp.usecase.AlbumNextError
+import com.example.memoriesapp.usecase.AlbumNextResult
+import com.example.memoriesapp.usecase.AlbumPageInfo
+import com.example.memoriesapp.usecase.SyncQueueService
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -18,42 +24,6 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onEach
-
-/**
- * Page info containing albums and pagination state
- */
-data class AlbumPageInfo(
-    val albums: List<Album>,
-    val hasMore: Boolean
-)
-
-/**
- * Result of display operation
- */
-sealed class AlbumDisplayResult {
-    data class Success(val pageInfo: AlbumPageInfo) : AlbumDisplayResult()
-    data class Failure(val error: AlbumDisplayError) : AlbumDisplayResult()
-}
-
-enum class AlbumDisplayError {
-    NETWORK_ERROR,
-    OFFLINE,
-    UNKNOWN
-}
-
-/**
- * Result of next page operation
- */
-sealed class AlbumNextResult {
-    data class Success(val pageInfo: AlbumPageInfo) : AlbumNextResult()
-    data class Failure(val error: AlbumNextError) : AlbumNextResult()
-}
-
-enum class AlbumNextError {
-    NETWORK_ERROR,
-    OFFLINE,
-    UNKNOWN
-}
 
 /**
  * UseCase for album list screen

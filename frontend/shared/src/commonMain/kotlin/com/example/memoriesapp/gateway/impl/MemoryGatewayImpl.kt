@@ -1,10 +1,11 @@
-package com.example.memoriesapp.gateway
+package com.example.memoriesapp.gateway.impl
 
 import com.example.memoriesapp.api.client.ApiClient
 import com.example.memoriesapp.api.request.GetMemoriesRequest
 import com.example.memoriesapp.api.request.MemoryUploadRequest
 import com.example.memoriesapp.api.response.MemoryResponse
 import com.example.memoriesapp.api.response.PaginatedMemoriesResponse
+import com.example.memoriesapp.gateway.MemoryGateway
 import kotlinx.serialization.json.Json
 
 /**

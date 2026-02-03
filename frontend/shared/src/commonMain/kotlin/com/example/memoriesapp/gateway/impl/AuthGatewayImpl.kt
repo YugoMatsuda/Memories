@@ -1,8 +1,9 @@
-package com.example.memoriesapp.gateway
+package com.example.memoriesapp.gateway.impl
 
 import com.example.memoriesapp.api.client.ApiClient
 import com.example.memoriesapp.api.request.LoginRequest
 import com.example.memoriesapp.api.response.TokenResponse
+import com.example.memoriesapp.gateway.AuthGateway
 import kotlinx.serialization.json.Json
 
 /**

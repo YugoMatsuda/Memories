@@ -1,36 +1,23 @@
-package com.example.memoriesapp.usecase
+package com.example.memoriesapp.usecase.impl
 
 import com.example.memoriesapp.core.LocalId
 import com.example.memoriesapp.core.SyncStatus
 import com.example.memoriesapp.domain.EntityType
+import com.example.memoriesapp.domain.ImageEntityType
 import com.example.memoriesapp.domain.MimeType
 import com.example.memoriesapp.domain.OperationType
 import com.example.memoriesapp.domain.User
-import kotlinx.datetime.LocalDate
 import com.example.memoriesapp.gateway.UserGateway
 import com.example.memoriesapp.mapper.UserMapper
 import com.example.memoriesapp.repository.AuthSessionRepository
-import com.example.memoriesapp.domain.ImageEntityType
 import com.example.memoriesapp.repository.ImageStorageRepository
 import com.example.memoriesapp.repository.ReachabilityRepository
 import com.example.memoriesapp.repository.UserRepository
-
-/**
- * Result of profile update operation
- */
-sealed class UpdateProfileResult {
-    data class Success(val user: User) : UpdateProfileResult()
-    data class SuccessPendingSync(val user: User) : UpdateProfileResult()
-    data class Failure(val error: UpdateProfileError) : UpdateProfileResult()
-}
-
-enum class UpdateProfileError {
-    NETWORK_ERROR,
-    SERVER_ERROR,
-    IMAGE_STORAGE_FAILED,
-    DATABASE_ERROR,
-    UNKNOWN
-}
+import com.example.memoriesapp.usecase.SyncQueueService
+import com.example.memoriesapp.usecase.UpdateProfileError
+import com.example.memoriesapp.usecase.UpdateProfileResult
+import com.example.memoriesapp.usecase.UserProfileUseCase
+import kotlinx.datetime.LocalDate
 
 /**
  * UseCase for user profile screen

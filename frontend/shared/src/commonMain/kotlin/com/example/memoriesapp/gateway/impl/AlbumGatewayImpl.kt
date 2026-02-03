@@ -1,4 +1,4 @@
-package com.example.memoriesapp.gateway
+package com.example.memoriesapp.gateway.impl
 
 import com.example.memoriesapp.api.client.ApiClient
 import com.example.memoriesapp.api.request.AlbumCoverUploadRequest
@@ -8,6 +8,7 @@ import com.example.memoriesapp.api.request.GetAlbumRequest
 import com.example.memoriesapp.api.request.GetAlbumsRequest
 import com.example.memoriesapp.api.response.AlbumResponse
 import com.example.memoriesapp.api.response.PaginatedAlbumsResponse
+import com.example.memoriesapp.gateway.AlbumGateway
 import kotlinx.serialization.json.Json
 
 /**
