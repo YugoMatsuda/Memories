@@ -26,12 +26,20 @@ A mobile application where users can log in, manage their profile, and create al
 ```bash
 cd frontend
 
-# Build the KMP shared framework
-./gradlew :shared:assembleXCFramework
+# Build the KMP shared framework (Debug)
+./gradlew :shared:assembleSharedDebugXCFramework
 
 # Open Xcode project
 open iosApp/iosApp.xcodeproj
 ```
+
+> **Note**: Re-run the Gradle task above before building in Xcode if you modify the shared Kotlin code.
+>
+> | Task | Description |
+> |------|-------------|
+> | `assembleSharedDebugXCFramework` | Debug build (recommended for development) |
+> | `assembleSharedReleaseXCFramework` | Release build |
+> | `assembleSharedXCFramework` | Both Debug + Release |
 
 ### Android
 
