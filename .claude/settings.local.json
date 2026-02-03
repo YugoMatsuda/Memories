@@ -34,7 +34,8 @@
       "Bash(do grep -o 'tests=\"\"\"\"[0-9]*\"\"\"\"' \"$f\")",
       "Bash(done)",
       "Bash(swift test:*)",
-      "Bash(xcrun simctl list:*)"
+      "Bash(xcrun simctl list:*)",
+      "Bash(git -C /Users/yugomatsuda/Desktop/Memories log --oneline -20)"
     ]
   }
 }
