@@ -11,6 +11,9 @@ sealed class Route(val route: String) {
     data object AlbumDetail : Route("albums/{albumLocalId}") {
         fun createRoute(albumLocalId: String) = "albums/$albumLocalId"
     }
+    data object AlbumDetailDeepLink : Route("albums/deeplink/{serverId}") {
+        fun createRoute(serverId: Int) = "albums/deeplink/$serverId"
+    }
     data object AlbumForm : Route("albums/form?albumLocalId={albumLocalId}") {
         fun createRoute(albumLocalId: String? = null) =
             if (albumLocalId != null) "albums/form?albumLocalId=$albumLocalId" else "albums/form"

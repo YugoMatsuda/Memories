@@ -10,7 +10,6 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.memoriesapp.di.AppContainer
-import com.example.memoriesapp.di.AuthenticatedContainer
 import com.example.memoriesapp.domain.Album
 import com.example.memoriesapp.domain.User
 import com.example.memoriesapp.ui.uicomponents.screens.AlbumDetailScreen
@@ -21,6 +20,7 @@ import com.example.memoriesapp.ui.uicomponents.screens.MemoryFormScreen
 import com.example.memoriesapp.ui.uicomponents.screens.SplashScreen
 import com.example.memoriesapp.ui.uicomponents.screens.SyncQueuesScreen
 import com.example.memoriesapp.ui.uicomponents.screens.UserProfileScreen
+import com.example.memoriesapp.ui.uilogics.viewmodels.AlbumDetailOrigin
 import com.example.memoriesapp.ui.uilogics.viewmodels.AlbumDetailViewModel
 import com.example.memoriesapp.ui.uilogics.viewmodels.AlbumFormMode
 import com.example.memoriesapp.ui.uilogics.viewmodels.AlbumFormViewModel
@@ -30,6 +30,7 @@ import com.example.memoriesapp.ui.uilogics.viewmodels.MemoryFormViewModel
 import com.example.memoriesapp.ui.uilogics.viewmodels.SplashViewModel
 import com.example.memoriesapp.ui.uilogics.viewmodels.SyncQueuesViewModel
 import com.example.memoriesapp.ui.uilogics.viewmodels.UserProfileViewModel
+import com.example.memoriesapp.usecase.DeepLink
 
 /**
  * Root state for app navigation.
@@ -49,6 +50,9 @@ fun AppNavGraph(
     navController: NavHostController,
     appContainer: AppContainer,
     rootState: RootState,
+    pendingDeepLink: DeepLink?,
+    deepLinkToProcess: DeepLink?,
+    onDeepLinkConsumed: () -> Unit,
     onLoginSuccess: (token: String, userId: Int) -> Unit,
     onLogout: () -> Unit
 ) {
@@ -69,6 +73,20 @@ fun AppNavGraph(
     var selectedAlbum by remember { mutableStateOf<Album?>(null) }
     // Current user for profile
     var currentUser by remember { mutableStateOf<User?>(null) }
+
+    // Handle deep link navigation (warm start)
+    LaunchedEffect(deepLinkToProcess) {
+        deepLinkToProcess?.let { deepLink ->
+            when (deepLink) {
+                is DeepLink.Album -> {
+                    navController.navigate(Route.AlbumDetailDeepLink.createRoute(deepLink.albumId)) {
+                        popUpTo(Route.AlbumList.route) { inclusive = false }
+                    }
+                }
+            }
+            onDeepLinkConsumed()
+        }
+    }
 
     NavHost(
         navController = navController,
@@ -99,14 +117,26 @@ fun AppNavGraph(
                 onLaunchSuccess = { user ->
                     currentUser = user
                     if (hasPreviousSession) {
-                        // Show ContinueAs screen
+                        // Show ContinueAs screen (deep link will be processed after continue)
                         navController.navigate(Route.ContinueAs.route) {
                             popUpTo(Route.Splash.route) { inclusive = true }
                         }
                     } else {
-                        // Direct to AlbumList for new login
-                        navController.navigate(Route.AlbumList.route) {
-                            popUpTo(Route.Splash.route) { inclusive = true }
+                        // New login: check for pending deep link
+                        val deepLink = pendingDeepLink
+                        if (deepLink != null) {
+                            when (deepLink) {
+                                is DeepLink.Album -> {
+                                    navController.navigate(Route.AlbumDetailDeepLink.createRoute(deepLink.albumId)) {
+                                        popUpTo(Route.Splash.route) { inclusive = true }
+                                    }
+                                }
+                            }
+                            onDeepLinkConsumed()
+                        } else {
+                            navController.navigate(Route.AlbumList.route) {
+                                popUpTo(Route.Splash.route) { inclusive = true }
+                            }
                         }
                     }
                 },
@@ -134,9 +164,21 @@ fun AppNavGraph(
                     onLoginSuccess(session.token, session.userId)
                 },
                 onContinueAsUser = {
-                    // Continue with existing session
-                    navController.navigate(Route.AlbumList.route) {
-                        popUpTo(Route.ContinueAs.route) { inclusive = true }
+                    // Continue with existing session, check for pending deep link
+                    val deepLink = pendingDeepLink
+                    if (deepLink != null) {
+                        when (deepLink) {
+                            is DeepLink.Album -> {
+                                navController.navigate(Route.AlbumDetailDeepLink.createRoute(deepLink.albumId)) {
+                                    popUpTo(Route.ContinueAs.route) { inclusive = true }
+                                }
+                            }
+                        }
+                        onDeepLinkConsumed()
+                    } else {
+                        navController.navigate(Route.AlbumList.route) {
+                            popUpTo(Route.ContinueAs.route) { inclusive = true }
+                        }
                     }
                 }
             )
@@ -169,14 +211,14 @@ fun AppNavGraph(
             )
         }
 
-        // Album Detail Screen
+        // Album Detail Screen (from album list)
         composable(Route.AlbumDetail.route) {
             val container = authenticatedContainer ?: return@composable
             val album = selectedAlbum ?: return@composable
 
             val viewModel = remember(container, album.localId) {
                 AlbumDetailViewModel(
-                    initialAlbum = album,
+                    origin = AlbumDetailOrigin.AlbumList(album),
                     albumDetailUseCase = container.albumDetailUseCase
                 )
             }
@@ -192,6 +234,38 @@ fun AppNavGraph(
                     navController.navigate(Route.AlbumForm.createRoute(albumToEdit.localId.toString()))
                 },
                 onNavigateToCreateMemory = { albumForMemory ->
+                    navController.navigate(Route.MemoryForm.createRoute(albumForMemory.localId.toString()))
+                }
+            )
+        }
+
+        // Album Detail Screen (from deep link)
+        composable(Route.AlbumDetailDeepLink.route) { backStackEntry ->
+            val container = authenticatedContainer ?: return@composable
+            val serverId = backStackEntry.arguments?.getString("serverId")?.toIntOrNull()
+                ?: return@composable
+
+            val viewModel = remember(container, serverId) {
+                AlbumDetailViewModel(
+                    origin = AlbumDetailOrigin.DeepLink(serverId),
+                    albumDetailUseCase = container.albumDetailUseCase
+                )
+            }
+
+            AlbumDetailScreen(
+                viewModel = viewModel,
+                onNavigateBack = {
+                    // Navigate to album list instead of back
+                    navController.navigate(Route.AlbumList.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
+                onNavigateToEditAlbum = { albumToEdit ->
+                    selectedAlbum = albumToEdit
+                    navController.navigate(Route.AlbumForm.createRoute(albumToEdit.localId.toString()))
+                },
+                onNavigateToCreateMemory = { albumForMemory ->
+                    selectedAlbum = albumForMemory
                     navController.navigate(Route.MemoryForm.createRoute(albumForMemory.localId.toString()))
                 }
             )

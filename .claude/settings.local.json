@@ -28,7 +28,8 @@
       "Bash({ cd /Users/yugomatsuda/Desktop/Memories/frontend)",
       "Bash(})",
       "Bash(tee:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(java -version:*)"
     ]
   }
 }

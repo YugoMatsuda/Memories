@@ -15,6 +15,8 @@ import com.example.memoriesapp.usecase.AlbumDetailUseCase
 import com.example.memoriesapp.usecase.MemoryDisplayError
 import com.example.memoriesapp.usecase.MemoryDisplayResult
 import com.example.memoriesapp.usecase.MemoryNextResult
+import com.example.memoriesapp.usecase.ResolveAlbumError
+import com.example.memoriesapp.usecase.ResolveAlbumResult
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -23,14 +25,27 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
 /**
+ * Origin of album detail navigation.
+ */
+sealed class AlbumDetailOrigin {
+    data class AlbumList(val album: Album) : AlbumDetailOrigin()
+    data class DeepLink(val serverId: Int) : AlbumDetailOrigin()
+}
+
+/**
  * ViewModel for album detail screen.
  */
 class AlbumDetailViewModel(
-    private val initialAlbum: Album,
+    private val origin: AlbumDetailOrigin,
     private val albumDetailUseCase: AlbumDetailUseCase
 ) : ViewModel() {
 
-    var album by mutableStateOf(initialAlbum)
+    var album by mutableStateOf<Album?>(
+        when (origin) {
+            is AlbumDetailOrigin.AlbumList -> origin.album
+            is AlbumDetailOrigin.DeepLink -> null
+        }
+    )
         private set
     var displayResult by mutableStateOf<DisplayResult>(DisplayResult.Loading)
         private set
@@ -68,7 +83,8 @@ class AlbumDetailViewModel(
     private fun handleLocalMemoryChange(event: LocalMemoryChangeEvent) {
         when (event) {
             is LocalMemoryChangeEvent.Created -> {
-                if (event.memory.albumLocalId != album.localId) return
+                val currentAlbum = album ?: return
+                if (event.memory.albumLocalId != currentAlbum.localId) return
                 val currentData = (displayResult as? DisplayResult.Success)?.data ?: return
                 val memories = listOf(event.memory) + currentData.memories
                 displayResult = DisplayResult.Success(
@@ -82,7 +98,8 @@ class AlbumDetailViewModel(
         when (event) {
             is LocalAlbumChangeEvent.Created -> {}
             is LocalAlbumChangeEvent.Updated -> {
-                if (event.album.localId == album.localId) {
+                val currentAlbum = album ?: return
+                if (event.album.localId == currentAlbum.localId) {
                     album = event.album
                 }
             }
@@ -90,7 +107,8 @@ class AlbumDetailViewModel(
     }
 
     fun updateAlbum(newAlbum: Album) {
-        if (newAlbum.localId == album.localId) {
+        val currentAlbum = album ?: return
+        if (newAlbum.localId == currentAlbum.localId) {
             album = newAlbum
         }
     }
@@ -98,8 +116,42 @@ class AlbumDetailViewModel(
     fun onAppear() {
         if (displayResult is DisplayResult.Loading) {
             viewModelScope.launch {
+                when (origin) {
+                    is AlbumDetailOrigin.AlbumList -> display()
+                    is AlbumDetailOrigin.DeepLink -> resolveAlbumAndDisplay(origin.serverId)
+                }
+            }
+        }
+    }
+
+    private suspend fun resolveAlbumAndDisplay(serverId: Int) {
+        displayResult = DisplayResult.Loading
+
+        when (val result = albumDetailUseCase.resolveAlbum(serverId)) {
+            is ResolveAlbumResult.Success -> {
+                album = result.album
                 display()
             }
+            is ResolveAlbumResult.Failure -> {
+                displayResult = DisplayResult.Failure(mapResolveError(result.error, serverId))
+            }
+        }
+    }
+
+    private fun mapResolveError(error: ResolveAlbumError, serverId: Int): ErrorUIModel {
+        return when (error) {
+            ResolveAlbumError.NOT_FOUND -> ErrorUIModel(
+                message = "Album not found.",
+                onRetry = { }
+            )
+            ResolveAlbumError.NETWORK_ERROR -> ErrorUIModel(
+                message = "Network error. Please check your connection.",
+                onRetry = { viewModelScope.launch { resolveAlbumAndDisplay(serverId) } }
+            )
+            ResolveAlbumError.OFFLINE_UNAVAILABLE -> ErrorUIModel(
+                message = "This album is not available offline.",
+                onRetry = { viewModelScope.launch { resolveAlbumAndDisplay(serverId) } }
+            )
         }
     }
 
@@ -113,14 +165,16 @@ class AlbumDetailViewModel(
     }
 
     fun showEditAlbumForm() {
+        val currentAlbum = album ?: return
         viewModelScope.launch {
-            _navigationEvent.emit(NavigationEvent.EditAlbum(album))
+            _navigationEvent.emit(NavigationEvent.EditAlbum(currentAlbum))
         }
     }
 
     fun showCreateMemoryForm() {
+        val currentAlbum = album ?: return
         viewModelScope.launch {
-            _navigationEvent.emit(NavigationEvent.CreateMemory(album))
+            _navigationEvent.emit(NavigationEvent.CreateMemory(currentAlbum))
         }
     }
 
@@ -139,8 +193,9 @@ class AlbumDetailViewModel(
     }
 
     private suspend fun display() {
+        val currentAlbum = album ?: return
         displayResult = DisplayResult.Loading
-        when (val result = albumDetailUseCase.display(album)) {
+        when (val result = albumDetailUseCase.display(currentAlbum)) {
             is MemoryDisplayResult.Success -> {
                 displayResult = DisplayResult.Success(
                     makeListData(result.pageInfo.memories, 1, result.pageInfo.hasMore)
@@ -153,13 +208,14 @@ class AlbumDetailViewModel(
     }
 
     private suspend fun loadMore() {
+        val currentAlbum = album ?: return
         val currentData = (displayResult as? DisplayResult.Success)?.data ?: return
         val previousCount = currentData.memories.size
         val nextPage = currentData.currentPage + 1
 
         isLoadingMore = true
 
-        when (val result = albumDetailUseCase.next(album, nextPage)) {
+        when (val result = albumDetailUseCase.next(currentAlbum, nextPage)) {
             is MemoryNextResult.Success -> {
                 displayResult = DisplayResult.Success(
                     makeListData(result.pageInfo.memories, nextPage, result.pageInfo.hasMore)

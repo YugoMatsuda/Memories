@@ -90,13 +90,15 @@ fun AlbumDetailScreen(
         viewModel.onAppear()
     }
 
+    val album = viewModel.album
+
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             topBar = {
                 TopAppBar(
                     title = {
                         Text(
-                            text = viewModel.album.title,
+                            text = album?.title ?: "Loading...",
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -110,21 +112,25 @@ fun AlbumDetailScreen(
                         }
                     },
                     actions = {
-                        IconButton(onClick = viewModel::showEditAlbumForm) {
-                            Icon(
-                                painter = painterResource(android.R.drawable.ic_menu_edit),
-                                contentDescription = "Edit Album"
-                            )
+                        if (album != null) {
+                            IconButton(onClick = viewModel::showEditAlbumForm) {
+                                Icon(
+                                    painter = painterResource(android.R.drawable.ic_menu_edit),
+                                    contentDescription = "Edit Album"
+                                )
+                            }
                         }
                     }
                 )
             },
             floatingActionButton = {
-                FloatingActionButton(onClick = viewModel::showCreateMemoryForm) {
-                    Icon(
-                        painter = painterResource(android.R.drawable.ic_input_add),
-                        contentDescription = "Add Memory"
-                    )
+                if (album != null) {
+                    FloatingActionButton(onClick = viewModel::showCreateMemoryForm) {
+                        Icon(
+                            painter = painterResource(android.R.drawable.ic_input_add),
+                            contentDescription = "Add Memory"
+                        )
+                    }
                 }
             }
         ) { paddingValues ->
