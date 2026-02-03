@@ -59,8 +59,8 @@ graph BT
     end
 
     subgraph Presentation
-        A1[SwiftUI] --> B1[ViewModel]
-        A2[Compose] --> B2[ViewModel]
+        A1[SwiftUI iOS] --> B1[ViewModel]
+        A2[Compose Android] --> B2[ViewModel]
     end
 
     F --> G
@@ -78,7 +78,6 @@ graph BT
 | Package | Responsibility |
 |---------|----------------|
 | **api** | API client, requests, responses |
-| **core** | Core types (LocalId, Timestamp, SyncStatus) |
 | **domain** | Domain models |
 | **gateway** | API abstractions |
 | **mapper** | DTO ↔ Domain mappers |
@@ -90,7 +89,7 @@ graph BT
 | Module | Responsibility |
 |--------|----------------|
 | **Domains** | Extensions for KMP domain models (Swift type conversions, Identifiable) |
-| **Utilities** | Keychain, image URL resolver, formatters |
+| **Utilities** | Keychain, formatters |
 | **Repositories** | SwiftData + KMP bridge implementations |
 | **UseCases** | Swift adapters wrapping KMP use cases |
 | **UILogics** | ViewModels, Router protocol |
