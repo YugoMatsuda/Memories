@@ -16,6 +16,6 @@ let package = Package(
     ],
     targets: [
         .target(name: "UILogics", dependencies: ["Domains", "Repositories", "UseCases", "Utilities"]),
-        .testTarget(name: "UILogicsTests", dependencies: ["UILogics"]),
+        .testTarget(name: "UILogicsTests", dependencies: ["UILogics", "Domains", "UseCases"]),
     ]
 )

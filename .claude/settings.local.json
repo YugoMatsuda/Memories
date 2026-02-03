@@ -32,7 +32,9 @@
       "Bash(java -version:*)",
       "Bash(for f in shared/build/test-results/testDebugUnitTest/*.xml)",
       "Bash(do grep -o 'tests=\"\"\"\"[0-9]*\"\"\"\"' \"$f\")",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(swift test:*)",
+      "Bash(xcrun simctl list:*)"
     ]
   }
 }
