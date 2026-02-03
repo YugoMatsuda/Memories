@@ -26,6 +26,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -35,6 +36,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -81,7 +83,41 @@ fun AlbumListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Memories") },
+                title = {
+                    Text(if (viewModel.isNetworkDebugMode) "Memories (Debug)" else "Memories")
+                },
+                navigationIcon = {
+                    // Sync button in debug mode
+                    if (viewModel.isNetworkDebugMode) {
+                        TextButton(onClick = viewModel::showSyncQueues) {
+                            if (viewModel.syncState.isSyncing) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(16.dp),
+                                        strokeWidth = 2.dp
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Syncing", style = MaterialTheme.typography.labelMedium)
+                                }
+                            } else {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text("Sync", style = MaterialTheme.typography.labelMedium)
+                                    if (viewModel.syncState.pendingCount > 0) {
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(
+                                            text = "${viewModel.syncState.pendingCount}",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = Color.White,
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
                 actions = {
                     // User profile
                     IconButton(onClick = viewModel::showUserProfile) {
@@ -97,15 +133,38 @@ fun AlbumListScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = viewModel::showCreateAlbumForm,
-                containerColor = MaterialTheme.colorScheme.primary
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Icon(
-                    painter = painterResource(android.R.drawable.ic_input_add),
-                    contentDescription = "Create Album",
-                    tint = MaterialTheme.colorScheme.onPrimary
-                )
+                // Network toggle button (debug mode only)
+                if (viewModel.isNetworkDebugMode) {
+                    SmallFloatingActionButton(
+                        onClick = viewModel::toggleOnlineState,
+                        containerColor = if (viewModel.isOnline) Color(0xFF4CAF50) else Color(0xFFF44336)
+                    ) {
+                        Icon(
+                            painter = painterResource(
+                                if (viewModel.isOnline) android.R.drawable.stat_sys_upload_done
+                                else android.R.drawable.stat_notify_error
+                            ),
+                            contentDescription = if (viewModel.isOnline) "Online" else "Offline",
+                            tint = Color.White
+                        )
+                    }
+                }
+
+                // Create album FAB
+                FloatingActionButton(
+                    onClick = viewModel::showCreateAlbumForm,
+                    containerColor = MaterialTheme.colorScheme.primary
+                ) {
+                    Icon(
+                        painter = painterResource(android.R.drawable.ic_input_add),
+                        contentDescription = "Create Album",
+                        tint = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
             }
         }
     ) { paddingValues ->

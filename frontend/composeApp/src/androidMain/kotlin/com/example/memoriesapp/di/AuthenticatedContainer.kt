@@ -15,8 +15,8 @@ import com.example.memoriesapp.usecase.AlbumDetailUseCase
 import com.example.memoriesapp.usecase.AlbumDetailUseCaseImpl
 import com.example.memoriesapp.usecase.AlbumFormUseCase
 import com.example.memoriesapp.usecase.AlbumFormUseCaseImpl
-import com.example.memoriesapp.usecase.AlbumListUseCase
 import com.example.memoriesapp.usecase.AlbumListUseCaseImpl
+import com.example.memoriesapp.usecase.AlbumListUseCaseWrapper
 import com.example.memoriesapp.usecase.MemoryFormUseCase
 import com.example.memoriesapp.usecase.MemoryFormUseCaseImpl
 import com.example.memoriesapp.usecase.SplashUseCase
@@ -78,8 +78,8 @@ class AuthenticatedContainer(
         )
     }
 
-    val albumListUseCase: AlbumListUseCase by lazy {
-        AlbumListUseCaseImpl(
+    val albumListUseCase: AlbumListUseCaseWrapper by lazy {
+        val impl = AlbumListUseCaseImpl(
             userRepository = userRepository,
             albumRepository = albumRepository,
             albumGateway = albumGateway,
@@ -87,6 +87,7 @@ class AuthenticatedContainer(
             syncQueueService = syncQueueService,
             syncQueueRepository = syncQueueRepository
         )
+        AlbumListUseCaseWrapper(impl, reachabilityRepository)
     }
 
     val albumDetailUseCase: AlbumDetailUseCase by lazy {

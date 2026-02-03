@@ -11,7 +11,7 @@ import com.example.memoriesapp.repository.LocalAlbumChangeEvent
 import com.example.memoriesapp.repository.SyncQueueState
 import com.example.memoriesapp.usecase.AlbumDisplayError
 import com.example.memoriesapp.usecase.AlbumDisplayResult
-import com.example.memoriesapp.usecase.AlbumListUseCase
+import com.example.memoriesapp.usecase.AlbumListUseCaseWrapper
 import com.example.memoriesapp.usecase.AlbumNextResult
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -24,7 +24,7 @@ import kotlinx.coroutines.launch
  * ViewModel for album list screen.
  */
 class AlbumListViewModel(
-    private val albumListUseCase: AlbumListUseCase
+    private val albumListUseCase: AlbumListUseCaseWrapper
 ) : ViewModel() {
 
     var userAvatarUrl by mutableStateOf<String?>(null)
@@ -35,6 +35,8 @@ class AlbumListViewModel(
         private set
     var isOnline by mutableStateOf(true)
         private set
+
+    val isNetworkDebugMode: Boolean = albumListUseCase.isNetworkDebugMode
 
     // Pagination state
     var isLoadingMore by mutableStateOf(false)
@@ -80,6 +82,10 @@ class AlbumListViewModel(
                 isOnline = online
             }
             .launchIn(viewModelScope)
+    }
+
+    fun toggleOnlineState() {
+        albumListUseCase.toggleOnlineState()
     }
 
     private fun handleLocalChange(event: LocalAlbumChangeEvent) {

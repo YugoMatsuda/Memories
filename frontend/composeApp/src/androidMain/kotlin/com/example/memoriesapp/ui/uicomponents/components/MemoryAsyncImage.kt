@@ -16,6 +16,7 @@ import androidx.compose.ui.res.painterResource
 import coil.compose.SubcomposeAsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
+import java.io.File
 
 /**
  * CompositionLocal for base URL used to resolve relative image URLs.
@@ -23,16 +24,17 @@ import coil.request.ImageRequest
 val LocalBaseUrl = staticCompositionLocalOf { "http://10.0.2.2:8000" }
 
 /**
- * Resolve URL by prepending base URL if it's a relative path.
+ * Resolve URL/path for image loading.
  * - Relative paths like "/uploads/image.jpg" -> "http://base/uploads/image.jpg"
  * - Absolute URLs are returned as-is
- * - Local file paths are returned as-is
+ * - Local file paths (absolute paths starting with /data or similar) -> File object
  */
-private fun resolveUrl(url: String, baseUrl: String): String {
+private fun resolveImageData(url: String, baseUrl: String): Any {
     return when {
+        url.startsWith("/data") || url.startsWith("/storage") -> File(url)
         url.startsWith("/") -> "$baseUrl$url"
         url.startsWith("http://") || url.startsWith("https://") -> url
-        else -> url // Local file path
+        else -> File(url) // Assume local file path
     }
 }
 
@@ -53,11 +55,11 @@ fun MemoryAsyncImage(
         return
     }
 
-    val resolvedUrl = resolveUrl(url, baseUrl)
+    val imageData = resolveImageData(url, baseUrl)
 
     SubcomposeAsyncImage(
         model = ImageRequest.Builder(LocalContext.current)
-            .data(resolvedUrl)
+            .data(imageData)
             .crossfade(true)
             .memoryCachePolicy(CachePolicy.ENABLED)
             .diskCachePolicy(CachePolicy.ENABLED)
