@@ -2,6 +2,7 @@ package com.example.memoriesapp.api.client
 
 import com.example.memoriesapp.api.error.ApiError
 import io.ktor.client.*
+import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
@@ -186,6 +187,16 @@ class AuthenticatedApiClient(
     private val httpClient = HttpClient {
         install(ContentNegotiation) {
             json(json)
+        }
+        install(HttpTimeout) {
+            requestTimeoutMillis = 60000
+            connectTimeoutMillis = 30000
+            socketTimeoutMillis = 60000
+        }
+        install(HttpRequestRetry) {
+            retryOnServerErrors(maxRetries = 3)
+            retryOnException(maxRetries = 3, retryOnTimeout = true)
+            exponentialDelay()
         }
     }
 

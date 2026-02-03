@@ -57,7 +57,11 @@ fun MemoryFormScreen(
     ) { uri ->
         uri?.let {
             val bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                ImageDecoder.decodeBitmap(ImageDecoder.createSource(context.contentResolver, it))
+                ImageDecoder.decodeBitmap(
+                    ImageDecoder.createSource(context.contentResolver, it)
+                ) { decoder, _, _ ->
+                    decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
+                }
             } else {
                 @Suppress("DEPRECATION")
                 MediaStore.Images.Media.getBitmap(context.contentResolver, it)
