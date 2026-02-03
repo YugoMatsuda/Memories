@@ -273,7 +273,7 @@ def upload_memory(
         destination = UPLOAD_DIR / filename
         with destination.open("wb") as buffer:
             buffer.write(file.file.read())
-        image_local_uri = str(destination)
+        image_local_uri = f"/uploads/{filename}"
 
         thumb_path = UPLOAD_DIR / f"thumb_{filename}"
         with Image.open(destination) as img:

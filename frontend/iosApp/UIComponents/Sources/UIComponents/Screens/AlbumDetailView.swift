@@ -20,23 +20,27 @@ public struct AlbumDetailView: View {
         ZStack {
             contentView
 
-            VStack {
-                Spacer()
-                HStack {
+            if viewModel.album != nil {
+                VStack {
                     Spacer()
-                    fabButton
+                    HStack {
+                        Spacer()
+                        fabButton
+                    }
                 }
+                .padding()
             }
-            .padding()
         }
         .navigationTitle(viewModel.album?.title ?? "")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    viewModel.showEditAlbumForm()
-                } label: {
-                    Image(systemName: "pencil")
+            if viewModel.album != nil {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        viewModel.showEditAlbumForm()
+                    } label: {
+                        Image(systemName: "pencil")
+                    }
                 }
             }
         }

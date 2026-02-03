@@ -20,7 +20,16 @@
       "Bash(grep:*)",
       "Bash(tree:*)",
       "Bash(./gradlew:*)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:dev.to)",
+      "Bash(pkill:*)",
+      "Bash(script -q /tmp/gradle_session.log /bin/bash -c \"cd /Users/yugomatsuda/Desktop/Memories/frontend && ./gradlew :composeApp:compileDebugKotlinAndroid\")",
+      "Bash(/bin/bash:*)",
+      "Bash({ cd /Users/yugomatsuda/Desktop/Memories/frontend)",
+      "Bash(})",
+      "Bash(tee:*)",
+      "Bash(echo:*)",
+      "Bash(java -version:*)"
     ]
   }
 }

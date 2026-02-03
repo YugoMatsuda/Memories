@@ -1,5 +1,6 @@
 import Foundation
 import Shared
+import Utilities
 
 // Type alias for KMP User
 public typealias User = Shared.User
@@ -7,19 +8,26 @@ public typealias User = Shared.User
 // MARK: - LocalDate <-> Date Conversion
 
 extension Kotlinx_datetimeLocalDate {
-    /// Convert KMP LocalDate to Swift Date (midnight UTC)
+    /// UTC calendar for consistent date conversions
+    private static var utcCalendar: Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC")!
+        return calendar
+    }
+
+    /// Convert KMP LocalDate to Swift Date (noon UTC to avoid timezone edge cases)
     public var date: Date {
         var components = DateComponents()
         components.year = Int(year)
         components.month = Int(monthNumber)
         components.day = Int(dayOfMonth)
-        components.timeZone = TimeZone(identifier: "UTC")
-        return Calendar.current.date(from: components) ?? Date()
+        components.hour = 12 // Use noon to avoid DST/timezone edge cases
+        return Self.utcCalendar.date(from: components) ?? Date()
     }
 
-    /// Create LocalDate from Swift Date
+    /// Create LocalDate from Swift Date (using UTC calendar)
     public static func from(date: Date) -> Kotlinx_datetimeLocalDate {
-        let calendar = Calendar.current
+        let calendar = Self.utcCalendar
         let year = Int32(calendar.component(.year, from: date))
         let month = Int32(calendar.component(.month, from: date))
         let day = Int32(calendar.component(.day, from: date))
@@ -48,9 +56,10 @@ extension Shared.User {
     }
 
     /// Display avatar as Swift URL (for UI)
+    /// Resolves relative URLs using ImageURLResolver.baseURL
     public var displayAvatarURL: URL? {
-        if let remote = avatarUrl { return URL(string: remote) }
-        if let local = avatarLocalPath { return URL(fileURLWithPath: local) }
+        if let remote = avatarUrl { return ImageURLResolver.resolve(remote) }
+        if let local = avatarLocalPath { return ImageURLResolver.resolveLocalPath(local) }
         return nil
     }
 

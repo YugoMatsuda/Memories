@@ -8,6 +8,9 @@ let package = Package(
     products: [
         .library(name: "Domains", targets: ["Domains"]),
     ],
+    dependencies: [
+        .package(path: "../Utilities"),
+    ],
     targets: [
         .binaryTarget(
             name: "Shared",
@@ -15,7 +18,7 @@ let package = Package(
         ),
         .target(
             name: "Domains",
-            dependencies: ["Shared"]
+            dependencies: ["Shared", "Utilities"]
         ),
         .testTarget(name: "DomainsTests", dependencies: ["Domains"]),
     ]

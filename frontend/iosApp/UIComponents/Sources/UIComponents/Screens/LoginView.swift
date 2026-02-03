@@ -10,6 +10,10 @@ public struct LoginView: View {
 
     public var body: some View {
         VStack(spacing: 24) {
+            
+            Text("Memories")
+                .font(.title)
+            
             if let item = viewModel.continueAsItem {
                 continueAsUserButton(item: item)
             }

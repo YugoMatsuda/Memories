@@ -24,8 +24,6 @@ public final class AlbumDetailUseCaseAdapter: AlbumDetailUseCaseProtocol, @unche
         self.kmpUseCase = kmpUseCase
     }
 
-    // MARK: - Observe (KMP Flow → Swift Publisher)
-
     public var localChangePublisher: AnyPublisher<Shared.LocalMemoryChangeEvent, Never> {
         kmpUseCase.localChangeFlow.asPublisher()
     }

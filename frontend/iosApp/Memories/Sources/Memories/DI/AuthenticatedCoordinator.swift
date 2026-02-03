@@ -100,7 +100,7 @@ public final class AuthenticatedCoordinator: ObservableObject {
     public func makeLoginView(user: User) -> LoginView {
         let continueAsItem = LoginViewModel.ContinueAsUIModel(
             userName: user.name,
-            avatarUrl: user.avatarURL,
+            avatarUrl: user.displayAvatarURL,
             onTap: { [weak self] in
                 self?.state = .main
             }
